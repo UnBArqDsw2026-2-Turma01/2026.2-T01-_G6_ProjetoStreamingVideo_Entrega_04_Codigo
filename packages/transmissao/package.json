@@ -1,0 +1,22 @@
+{
+  "name": "@g6/transmissao",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Contexto de transmissão: configuração (Builder) e canal (Observer) · TransmissaoPort.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "npm run test:vitest && npm run test:node",
+    "test:vitest": "vitest run --passWithNoTests",
+    "test:node": "tsx --test 'test/canal/**/*.test.ts'",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@g6/shared-kernel": "*"
+  },
+  "devDependencies": {
+    "vitest": "^5.1.0"
+  }
+}

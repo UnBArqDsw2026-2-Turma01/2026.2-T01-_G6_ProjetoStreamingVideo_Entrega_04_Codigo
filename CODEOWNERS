@@ -1,0 +1,30 @@
+# Donos por caminho (ver o guia #1). A última regra que casar vence.
+# Revisão de quem é dono é pedida automaticamente nos PRs.
+
+*                                         @Bappoz
+
+/packages/shared-kernel/                  @Daniellira540
+/packages/identidade/                     @HugoFreitass
+/packages/transmissao/                    @HeitorM50 @EduLoboM
+/packages/transmissao/src/configuracao/   @HeitorM50
+/packages/transmissao/test/configuracao/  @HeitorM50
+/packages/transmissao/src/canal/          @EduLoboM
+/packages/transmissao/test/canal/         @EduLoboM
+/packages/transmissao/src/servico/        @HeitorM50
+/packages/transmissao/test/servico/       @HeitorM50
+/packages/conteudo/                       @1emes
+/packages/monetizacao/                    @Davi-UnB
+/packages/monetizacao/src/recarga/        @Davi-UnB
+/packages/monetizacao/test/recarga/       @Davi-UnB
+/packages/monetizacao/src/doacao/         @Pedro-Henrique3
+/packages/monetizacao/test/doacao/        @Pedro-Henrique3
+/packages/monetizacao/src/destaque/       @Mateus0xC
+/packages/monetizacao/test/destaque/      @Mateus0xC
+/packages/chat/                           @Phill-Chill
+/packages/moderacao/                      @EduLoboM
+/apps/cli-demo/                           @HeitorM50
+/apps/web/                                @Mateus0xC
+/apps/web/src/auth/                       @HugoFreitass
+/apps/web/public/login.*                  @HugoFreitass
+
+/.github/                                 @Bappoz

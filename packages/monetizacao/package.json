@@ -1,0 +1,23 @@
+{
+  "name": "@g6/monetizacao",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Contexto de monetização: recarga (Decorator · Adapter · Proxy), doação (Facade + Mediator) e mensagem destacada (Decorator).",
+  "type": "commonjs",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "jest --passWithNoTests",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@g6/shared-kernel": "*"
+  },
+  "devDependencies": {
+    "jest": "^30.5.2",
+    "@swc/jest": "^0.2.39",
+    "@swc/core": "^1.16.18",
+    "@types/jest": "^30.0.0"
+  }
+}

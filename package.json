@@ -1,0 +1,26 @@
+{
+  "name": "g6-streaming-entrega04",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Monorepo do cenário arquitetural CA-01 — Grupo 06, FGA0208, UnB, 2026.2",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm test --workspaces --if-present",
+    "check": "npm run typecheck && npm test",
+    "demo": "npm start -w @g6/cli-demo",
+    "web": "npm start -w @g6/web"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "tsx": "^4.23.15",
+    "@types/node": "^22.20.5"
+  }
+}

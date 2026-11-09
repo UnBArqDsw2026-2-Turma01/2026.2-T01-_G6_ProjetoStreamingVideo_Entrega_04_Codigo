@@ -1,0 +1,21 @@
+{
+  "name": "@g6/cli-demo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Roteiro do CA-01 no terminal, compondo os módulos reais.",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/main.ts",
+    "test": "tsx --test 'test/**/*.test.ts'",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@g6/shared-kernel": "*",
+    "@g6/identidade": "*",
+    "@g6/transmissao": "*",
+    "@g6/conteudo": "*",
+    "@g6/monetizacao": "*",
+    "@g6/chat": "*",
+    "@g6/moderacao": "*"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@g6/conteudo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Contexto de conteúdo gerado pelo usuário (Factory Method) · reage a LiveEncerrada.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@g6/shared-kernel": "*"
+  },
+  "devDependencies": {
+    "vitest": "^5.1.0"
+  }
+}
