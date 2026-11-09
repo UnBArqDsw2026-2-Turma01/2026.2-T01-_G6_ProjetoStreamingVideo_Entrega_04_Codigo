@@ -1,0 +1,17 @@
+{
+  "name": "@g6/identidade",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Contexto de identidade e acesso (Chain of Responsibility) · AutenticacaoPort.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "tsx --test 'test/**/*.test.ts'",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@g6/shared-kernel": "*"
+  }
+}
