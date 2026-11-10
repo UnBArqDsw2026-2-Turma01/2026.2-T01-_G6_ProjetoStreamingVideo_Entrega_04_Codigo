@@ -50,6 +50,8 @@ npm test -w @g6/chat # só um pacote
 
 ## Regras em uma linha cada
 
+> O guia completo (donos, passo a passo, importação da E03, mudança de contrato) está em [CONTRIBUTING.md](CONTRIBUTING.md).
+
 1. Altere só os caminhos do **Escopo de arquivos** da sua issue (os donos estão em [`CODEOWNERS`](CODEOWNERS)).
 2. Pacote importa só `@g6/shared-kernel`; só `apps/*` compõem módulos.
 3. Contrato congelado no M1: mudança no shared-kernel exige issue com label `contrato` e aprovação das subequipes afetadas.
