@@ -63,6 +63,11 @@ export interface ComprovanteDoacao {
 export type SituacaoRecarga =
   | { readonly situacao: 'pendente'; readonly checkout: CheckoutPendente }
   | { readonly situacao: 'concluida'; readonly recibo: Recibo }
+  /**
+   * Não ocorre no fluxo atual: falhas ao criar o checkout voltam como erro em `recarregar`,
+   * e recusa ou expiração mantêm `pendente`. Reservada para um checkout expirado,
+   * se a monetização passar a cancelá-lo.
+   */
   | { readonly situacao: 'cancelada'; readonly recargaId: string; readonly motivo: string };
 
 /**
