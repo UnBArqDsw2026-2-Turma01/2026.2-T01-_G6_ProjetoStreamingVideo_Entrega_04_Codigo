@@ -1,13 +1,41 @@
-import type { MeioPagamento, PacoteId, Recibo, Resultado, Sessao } from '../tipos';
+import type {
+  CheckoutPendente,
+  ErroRecarga,
+  MeioPagamento,
+  OfertaRecarga,
+  PacoteId,
+  Resultado,
+  Sessao,
+  SituacaoRecarga,
+} from '../tipos';
 
 /**
  * Compra de moeda virtual.
  *
  * - **Provê:** `@g6/monetizacao` (Decorator no preço, Adapter no gateway, Proxy na confirmação).
  * - **Consome:** `apps/*`.
- * - **Garante:** o `Recibo` só é devolvido com o pagamento confirmado e a moeda creditada;
- *   pagamento recusado ou meio indisponível voltam como erro e não creditam nada.
+ * - **Garante:** a recarga tem dois tempos. `recarregar` só cria o checkout e **não credita**;
+ *   a moeda entra na carteira depois, quando um aviso de pagamento autêntico passa pelo Proxy,
+ *   e só então `consultar` devolve `concluida` e o evento `RecargaConcluida` é publicado,
+ *   uma vez por recarga. Pagamento recusado não aparece em `recarregar` nem cancela a recarga:
+ *   ela continua `pendente`, e o espectador pode tentar de novo no mesmo checkout (E02).
+ *
+ * O recebimento do aviso (webhook) fica fora do contrato: formato e assinatura são de cada
+ * processador, então pertencem à monetização, e `apps/*` só ligam a rota a ela.
  */
 export interface RecargaPort {
-  recarregar(sessao: Sessao, pacote: PacoteId, meio: MeioPagamento): Promise<Resultado<Recibo>>;
+  /** Pacotes à venda com preço riscado e promocional, para o modal de recarga. */
+  ofertas(sessao: Sessao): Promise<Resultado<OfertaRecarga[]>>;
+  /**
+   * Cria a recarga e o checkout no meio escolhido. Se ele estiver indisponível e sobrar um
+   * único outro, segue nesse (ver `CheckoutPendente.meio`); se sobrarem vários, devolve
+   * `MEIO_INDISPONIVEL` com as alternativas.
+   */
+  recarregar(
+    sessao: Sessao,
+    pacote: PacoteId,
+    meio: MeioPagamento,
+  ): Promise<Resultado<CheckoutPendente, ErroRecarga>>;
+  /** Situação de uma recarga da própria sessão. Recarga inexistente ou de outro usuário é erro. */
+  consultar(sessao: Sessao, recargaId: string): Promise<Resultado<SituacaoRecarga>>;
 }

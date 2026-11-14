@@ -9,6 +9,14 @@ export type EventoDominio =
   | { readonly tipo: 'LiveIniciada'; readonly live: LiveId; readonly canal: CanalId; readonly em: Date }
   /** Publicado por `@g6/transmissao` ao encerrar; `@g6/conteudo` reage criando o VOD. */
   | { readonly tipo: 'LiveEncerrada'; readonly live: LiveId; readonly canal: CanalId; readonly em: Date }
+  /** Publicado por `@g6/monetizacao` depois de creditar a moeda de uma recarga paga. */
+  | {
+      readonly tipo: 'RecargaConcluida';
+      readonly recargaId: string;
+      readonly usuario: UsuarioId;
+      readonly moeda: MoedaVirtual;
+      readonly em: Date;
+    }
   /** Publicado por `@g6/monetizacao` depois do repasse, mesmo que o chat falhe (D05). */
   | {
       readonly tipo: 'DoacaoConfirmada';
