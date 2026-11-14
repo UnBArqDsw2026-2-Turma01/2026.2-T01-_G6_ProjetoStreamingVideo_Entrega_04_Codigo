@@ -16,8 +16,9 @@ import type {
  * - **Consome:** `apps/*`.
  * - **Garante:** a recarga tem dois tempos. `recarregar` só cria o checkout e **não credita**;
  *   a moeda entra na carteira depois, quando um aviso de pagamento autêntico passa pelo Proxy,
- *   e só então `consultar` devolve `concluida`. Pagamento recusado aparece em `consultar`
- *   como `cancelada`, nunca em `recarregar`.
+ *   e só então `consultar` devolve `concluida` e o evento `RecargaConcluida` é publicado,
+ *   uma vez por recarga. Pagamento recusado aparece em `consultar` como `cancelada`,
+ *   nunca em `recarregar`.
  *
  * O recebimento do aviso (webhook) fica fora do contrato: formato e assinatura são de cada
  * processador, então pertencem à monetização, e `apps/*` só ligam a rota a ela.
