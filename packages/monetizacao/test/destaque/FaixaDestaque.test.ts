@@ -1,5 +1,4 @@
-import { ErroDominio } from "../../src/dominio";
-import { FaixaDestaque } from "../../src/f2-doacao";
+import { ErroDestaque, FaixaDestaque } from "../../src/destaque";
 
 describe("FaixaDestaque", () => {
   describe("classificação por faixas de valor (SC01 e SC02)", () => {
@@ -57,14 +56,14 @@ describe("FaixaDestaque", () => {
 
   describe("validações de quantidade mínima e formato", () => {
     test("rejeita quantidade inferior ao mínimo global de 200 moedas virtuais", () => {
-      expect(() => FaixaDestaque.paraQuantidade(199)).toThrow(ErroDominio);
-      expect(() => FaixaDestaque.paraQuantidade(0)).toThrow(ErroDominio);
-      expect(() => FaixaDestaque.paraQuantidade(-500)).toThrow(ErroDominio);
+      expect(() => FaixaDestaque.paraQuantidade(199)).toThrow(ErroDestaque);
+      expect(() => FaixaDestaque.paraQuantidade(0)).toThrow(ErroDestaque);
+      expect(() => FaixaDestaque.paraQuantidade(-500)).toThrow(ErroDestaque);
     });
 
     test("rejeita valores com ponto flutuante", () => {
-      expect(() => FaixaDestaque.paraQuantidade(200.5)).toThrow(ErroDominio);
-      expect(() => FaixaDestaque.paraQuantidade(NaN)).toThrow(ErroDominio);
+      expect(() => FaixaDestaque.paraQuantidade(200.5)).toThrow(ErroDestaque);
+      expect(() => FaixaDestaque.paraQuantidade(NaN)).toThrow(ErroDestaque);
     });
   });
 });

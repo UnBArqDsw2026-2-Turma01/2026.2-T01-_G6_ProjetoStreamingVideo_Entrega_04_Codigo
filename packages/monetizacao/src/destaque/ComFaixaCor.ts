@@ -1,4 +1,4 @@
-import { ErroDominio } from "../dominio";
+import { ErroDestaque } from "./ErroDestaque";
 import type { MensagemDestacada } from "./MensagemDestacada";
 import { MensagemDecorator } from "./MensagemDecorator";
 
@@ -9,7 +9,7 @@ export class ComFaixaCor extends MensagemDecorator {
   constructor(interna: MensagemDestacada, cor: string) {
     super(interna);
     if (cor.trim().length === 0) {
-      throw new ErroDominio("A cor da faixa de destaque não pode estar vazia.");
+      throw new ErroDestaque("A cor da faixa de destaque não pode estar vazia.");
     }
     this.corFaixa = cor;
   }

@@ -1,11 +1,9 @@
-import { ErroDominio } from "../../src/dominio";
-import {
-  ComFaixaCor,
-  ComFixacao,
-  ComLimiteCaracteres,
-  MensagemBase,
-  type MensagemDestacada,
-} from "../../src/f3-chat";
+import { ComFaixaCor } from "../../src/destaque/ComFaixaCor";
+import { ComFixacao } from "../../src/destaque/ComFixacao";
+import { ComLimiteCaracteres } from "../../src/destaque/ComLimiteCaracteres";
+import { ErroDestaque } from "../../src/destaque/ErroDestaque";
+import { MensagemBase } from "../../src/destaque/MensagemBase";
+import type { MensagemDestacada } from "../../src/destaque/MensagemDestacada";
 
 function base(texto = "Valeu pela live!"): MensagemBase {
   return new MensagemBase("Espectador", texto, 2000);
@@ -22,9 +20,9 @@ describe("MensagemBase (ConcreteComponent)", () => {
   });
 
   test("recusa autor vazio e quantidade inválida", () => {
-    expect(() => new MensagemBase("  ", "oi", 200)).toThrow(ErroDominio);
-    expect(() => new MensagemBase("Espectador", "oi", 0)).toThrow(ErroDominio);
-    expect(() => new MensagemBase("Espectador", "oi", 2.5)).toThrow(ErroDominio);
+    expect(() => new MensagemBase("  ", "oi", 200)).toThrow(ErroDestaque);
+    expect(() => new MensagemBase("Espectador", "oi", 0)).toThrow(ErroDestaque);
+    expect(() => new MensagemBase("Espectador", "oi", 2.5)).toThrow(ErroDestaque);
   });
 });
 
@@ -43,7 +41,7 @@ describe("ComFaixaCor", () => {
   });
 
   test("recusa cor vazia", () => {
-    expect(() => new ComFaixaCor(base(), "")).toThrow(ErroDominio);
+    expect(() => new ComFaixaCor(base(), "")).toThrow(ErroDestaque);
   });
 });
 
@@ -60,9 +58,9 @@ describe("ComFixacao", () => {
   });
 
   test("recusa tempo zero, negativo ou fracionado", () => {
-    expect(() => new ComFixacao(base(), 0)).toThrow(ErroDominio);
-    expect(() => new ComFixacao(base(), -5)).toThrow(ErroDominio);
-    expect(() => new ComFixacao(base(), 1.5)).toThrow(ErroDominio);
+    expect(() => new ComFixacao(base(), 0)).toThrow(ErroDestaque);
+    expect(() => new ComFixacao(base(), -5)).toThrow(ErroDestaque);
+    expect(() => new ComFixacao(base(), 1.5)).toThrow(ErroDestaque);
   });
 });
 
@@ -74,7 +72,7 @@ describe("ComLimiteCaracteres", () => {
 
   test("recusa o texto que passa do limite, dizendo o tamanho e o limite", () => {
     const mensagem = new ComLimiteCaracteres(base("1234567890"), 5);
-    expect(() => mensagem.texto()).toThrow(ErroDominio);
+    expect(() => mensagem.texto()).toThrow(ErroDestaque);
     expect(() => mensagem.texto()).toThrow("tem 10 caracteres e excede o limite de 5");
   });
 
@@ -90,7 +88,7 @@ describe("ComLimiteCaracteres", () => {
   });
 
   test("recusa limite inválido", () => {
-    expect(() => new ComLimiteCaracteres(base(), 0)).toThrow(ErroDominio);
+    expect(() => new ComLimiteCaracteres(base(), 0)).toThrow(ErroDestaque);
   });
 });
 

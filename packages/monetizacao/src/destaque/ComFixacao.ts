@@ -1,4 +1,4 @@
-import { ErroDominio } from "../dominio";
+import { ErroDestaque } from "./ErroDestaque";
 import type { MensagemDestacada } from "./MensagemDestacada";
 import { MensagemDecorator } from "./MensagemDecorator";
 
@@ -9,7 +9,7 @@ export class ComFixacao extends MensagemDecorator {
   constructor(interna: MensagemDestacada, minutos: number) {
     super(interna);
     if (!Number.isInteger(minutos) || minutos <= 0) {
-      throw new ErroDominio(`O tempo de fixação deve ser um número inteiro positivo de minutos: ${minutos}`);
+      throw new ErroDestaque(`O tempo de fixação deve ser um número inteiro positivo de minutos: ${minutos}`);
     }
     this.minutos = minutos;
   }

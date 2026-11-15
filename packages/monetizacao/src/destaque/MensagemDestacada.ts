@@ -1,5 +1,10 @@
 /**
- * Component do Decorator: qualquer mensagem que o chat sabe exibir.
+ * Component do Decorator: a mensagem enquanto recebe as camadas de destaque.
+ *
+ * Não confundir com o DTO `MensagemDestacada` do `@g6/shared-kernel`, que é o dado
+ * pronto entregue ao chat. Este tipo é interno à monetização; quem converte um no
+ * outro é `montarMensagemDestacada`.
+ *
  * Tanto a mensagem pura quanto cada camada de destaque (cor da faixa,
  * fixação, limite de caracteres) implementam esta mesma interface.
  */

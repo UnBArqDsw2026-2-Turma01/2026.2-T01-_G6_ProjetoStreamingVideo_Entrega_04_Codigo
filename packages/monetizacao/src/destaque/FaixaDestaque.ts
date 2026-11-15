@@ -1,4 +1,4 @@
-import { ErroDominio } from "../dominio";
+import { ErroDestaque } from "./ErroDestaque";
 
 /** Propriedades de cada faixa de destaque: cor, tempo de fixação no topo e limite de caracteres. */
 export interface PropriedadesFaixa {
@@ -74,8 +74,9 @@ export class FaixaDestaque {
       !Number.isInteger(quantidadeMoedaVirtual) ||
       quantidadeMoedaVirtual < FaixaDestaque.QUANTIDADE_MINIMA_GLOBAL
     ) {
-      throw new ErroDominio(
+      throw new ErroDestaque(
         `A quantidade mínima para enviar mensagem paga destacada é de ${FaixaDestaque.QUANTIDADE_MINIMA_GLOBAL} de moeda virtual.`,
+        "VALOR_ABAIXO_DO_MINIMO",
       );
     }
 

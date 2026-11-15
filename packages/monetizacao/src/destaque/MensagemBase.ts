@@ -1,4 +1,4 @@
-import { ErroDominio } from "../dominio";
+import { ErroDestaque } from "./ErroDestaque";
 import type { MensagemDestacada } from "./MensagemDestacada";
 
 /** ConcreteComponent: a mensagem da doação como chegou, sem nenhum destaque aplicado. */
@@ -9,10 +9,10 @@ export class MensagemBase implements MensagemDestacada {
 
   constructor(autor: string, conteudo: string, quantidadeMoedaVirtual: number) {
     if (autor.trim().length === 0) {
-      throw new ErroDominio("A mensagem destacada precisa de um autor.");
+      throw new ErroDestaque("A mensagem destacada precisa de um autor.");
     }
     if (!Number.isInteger(quantidadeMoedaVirtual) || quantidadeMoedaVirtual <= 0) {
-      throw new ErroDominio(`Quantidade de moeda virtual inválida: ${quantidadeMoedaVirtual}`);
+      throw new ErroDestaque(`Quantidade de moeda virtual inválida: ${quantidadeMoedaVirtual}`);
     }
     this.autor = autor;
     this.conteudo = conteudo;
