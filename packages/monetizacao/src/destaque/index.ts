@@ -1,4 +1,7 @@
-// monetizacao/destaque — dono definido na #12.
-// Ponto de entrada público do pacote: exporte aqui só o que outros módulos podem usar.
-// Implementação: #12.
-export {};
+export type { MensagemDestacada } from "./MensagemDestacada";
+export { MensagemBase } from "./MensagemBase";
+export { MensagemDecorator } from "./MensagemDecorator";
+export { ComFaixaCor } from "./ComFaixaCor";
+export { ComFixacao } from "./ComFixacao";
+export { ComLimiteCaracteres } from "./ComLimiteCaracteres";
+export { Chat } from "./Chat";
