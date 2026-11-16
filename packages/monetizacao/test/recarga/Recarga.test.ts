@@ -5,6 +5,7 @@ const criar = () =>
   new Recarga(
     "recarga-1",
     new Usuario("u1", "Espectador", "e@exemplo.com"),
+    "p300",
     300,
     Dinheiro.deCentavos(1491),
     "pacote de 300",
@@ -20,7 +21,7 @@ describe("Recarga", () => {
 
   test("rejeita quantidade de moeda virtual inválida", () => {
     expect(
-      () => new Recarga("r", new Usuario("u", "U", "u@e.com"), 0, Dinheiro.deCentavos(1), "", MetodoRecarga.SALDO_DO_CRIADOR),
+      () => new Recarga("r", new Usuario("u", "U", "u@e.com"), "p", 0, Dinheiro.deCentavos(1), "", MetodoRecarga.SALDO_DO_CRIADOR),
     ).toThrow(ErroDominio);
   });
 
@@ -37,5 +38,9 @@ describe("Recarga", () => {
     recarga.cancelarComMotivo("teste");
     expect(recarga.motivoCancelamento).toBe("teste");
     expect(() => recarga.registrarCheckout("Simulado-A", "sim-1")).toThrow(ErroDominio);
+  });
+
+  test("guarda o pacote que a originou", () => {
+    expect(criar().pacoteId).toBe("p300");
   });
 });

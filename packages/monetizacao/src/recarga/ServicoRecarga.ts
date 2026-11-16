@@ -142,6 +142,7 @@ export class ServicoRecarga {
     const recarga = new Recarga(
       this.geradorId.proximo("recarga"),
       usuario,
+      pacote.id,
       pacote.quantidadeMoedaVirtual,
       preco.calcular(),
       preco.descrever(),

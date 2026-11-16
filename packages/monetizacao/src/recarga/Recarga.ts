@@ -16,6 +16,7 @@ export type MetodoRecarga = (typeof MetodoRecarga)[keyof typeof MetodoRecarga];
  * para que a confirmação consulte o mesmo processador.
  */
 export class Recarga extends Transacao {
+  readonly pacoteId: string;
   readonly quantidadeMoedaVirtual: number;
   readonly valor: Dinheiro;
   readonly composicaoPreco: string;
@@ -28,6 +29,7 @@ export class Recarga extends Transacao {
   constructor(
     id: string,
     usuario: Usuario,
+    pacoteId: string,
     quantidadeMoedaVirtual: number,
     valor: Dinheiro,
     composicaoPreco: string,
@@ -38,6 +40,7 @@ export class Recarga extends Transacao {
       throw new ErroDominio(`Quantidade de moeda virtual inválida: ${quantidadeMoedaVirtual}`);
     }
     this.quantidadeMoedaVirtual = quantidadeMoedaVirtual;
+    this.pacoteId = pacoteId;
     this.valor = valor;
     this.composicaoPreco = composicaoPreco;
     this.metodo = metodo;

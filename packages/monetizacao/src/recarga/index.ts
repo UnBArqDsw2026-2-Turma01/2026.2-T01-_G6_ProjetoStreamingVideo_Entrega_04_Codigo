@@ -7,3 +7,5 @@ export { montarRecarga } from "./montarRecarga";
 export * from "./preco";
 export * from "./pagamento";
 export * from "./confirmacao";
+export { RecargaService, type DependenciasRecargaService } from "./RecargaService";
+export { gatewaysDoAmbiente, type GatewaysDoAmbiente, type VariaveisPagamento, type VerificarContaMercadoPago } from "./gatewaysDoAmbiente";
