@@ -1,5 +1,5 @@
 import { IObserver } from '../interfaces.js';
-import { StreamEvent } from '../../../types/events.js';
+import { StreamEvent } from '../../types/events.js';
 
 export class DiscordCrossPlatformWebhookObserver implements IObserver {
   public readonly id: string;

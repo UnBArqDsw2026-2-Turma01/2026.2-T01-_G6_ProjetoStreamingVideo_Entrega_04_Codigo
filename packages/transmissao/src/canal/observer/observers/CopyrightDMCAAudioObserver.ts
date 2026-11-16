@@ -1,6 +1,6 @@
 import { IObserver } from '../interfaces.js';
-import { StreamEvent } from '../../../types/events.js';
-import { AcousticFingerprinter, CopyrightMatch } from '../../../engine/algorithms/AcousticFingerprinter.js';
+import { StreamEvent } from '../../types/events.js';
+import { AcousticFingerprinter, CopyrightMatch } from '../../algorithms/AcousticFingerprinter.js';
 
 /**
  * CopyrightDMCAAudioObserver (GoF Observer)

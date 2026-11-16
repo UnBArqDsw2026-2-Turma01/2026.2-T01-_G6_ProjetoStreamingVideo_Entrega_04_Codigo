@@ -1,16 +1,16 @@
-export { 
-  StreamEvent, 
-  NotificationReport, 
-  NotificationResult, 
-  StreamMetadata, 
+export type {
+  StreamEvent,
+  NotificationReport,
+  NotificationResult,
+  StreamMetadata,
   StreamStatus,
   StreamingPlatform,
   ModerationPayload,
   ModerationSeverity,
   StreamEventType
-} from '../../types/events.js';
+} from '../types/events.js';
 
-import { StreamEvent, NotificationReport, StreamMetadata, StreamStatus } from '../../types/events.js';
+import type { StreamEvent, NotificationReport, StreamMetadata, StreamStatus } from '../types/events.js';
 
 export interface SubjectState {
   status: StreamStatus;

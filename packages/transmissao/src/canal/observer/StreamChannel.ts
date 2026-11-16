@@ -1,19 +1,31 @@
-import { 
-  ISubject, 
-  IObserver, 
-  StreamEvent, 
-  StreamStatus, 
-  StreamMetadata, 
-  NotificationReport, 
-  SubjectState 
+import { canalId, liveId, type EventBus, type LiveId } from '@g6/shared-kernel';
+import {
+  ISubject,
+  IObserver,
+  StreamEvent,
+  StreamStatus,
+  StreamMetadata,
+  NotificationReport,
+  SubjectState
 } from './interfaces.js';
-import { StreamingPlatform, ModerationPayload, ModerationSeverity } from '../../types/events.js';
+import { StreamingPlatform, ModerationPayload, ModerationSeverity } from '../types/events.js';
 import { INotificationDispatchStrategy } from '../strategy/interfaces.js';
 import { AsynchronousConcurrentDispatchStrategy } from '../strategy/AsynchronousConcurrentDispatchStrategy.js';
 
+/** Subconjunto estrutural de StreamConfig aceito por canal sem acoplar com configuracao. */
+export interface StreamConfigCanal {
+  readonly title: string;
+  readonly visibility?: string;
+  readonly latencyMode?: string;
+  readonly recordAutomatically?: boolean;
+  readonly resolution?: string;
+  readonly framesPerSecond?: number;
+  readonly bitrateBps?: number;
+}
+
 /**
  * ConcreteSubject (GoF Observer - Slide 53) e Context (GoF Strategy - Slide 12 e 13)
- * 
+ *
  * - Papel no Observer: Mantém a coleção de observadores (views), gerencia o ciclo
  *   de vida da live (Twitch, YouTube Live, Kick) e o pipeline reativo de Moderação
  *   (AutoMod, Detecção de Nudez/Gore, DMCA Copyright e Ações de Moderadores Humanos).
@@ -28,18 +40,26 @@ export class StreamChannel implements ISubject {
   private currentMetadata: StreamMetadata;
   private readonly observers: Map<string, IObserver> = new Map();
   private dispatchStrategy: INotificationDispatchStrategy;
+  private readonly eventBus: EventBus | undefined;
+  private streamConfig: StreamConfigCanal | undefined;
+  private activeLiveId: LiveId | undefined;
+  private liveSequence = 0;
 
   constructor(
-    channelId: string, 
-    streamerName: string, 
+    channelId: string,
+    streamerName: string,
     platform: StreamingPlatform = 'TWITCH',
     defaultCategory = 'Just Chatting',
-    initialStrategy: INotificationDispatchStrategy = new AsynchronousConcurrentDispatchStrategy()
+    initialStrategy: INotificationDispatchStrategy = new AsynchronousConcurrentDispatchStrategy(),
+    eventBus?: EventBus,
+    initialConfig?: StreamConfigCanal
   ) {
     this.channelId = channelId;
     this.streamerName = streamerName;
     this.platform = platform;
     this.dispatchStrategy = initialStrategy;
+    this.eventBus = eventBus;
+    this.streamConfig = initialConfig;
 
     const baseUrls: Record<StreamingPlatform, string> = {
       TWITCH: `https://twitch.tv/${channelId}`,
@@ -51,7 +71,7 @@ export class StreamChannel implements ISubject {
       channelId,
       streamerName,
       platform,
-      title: 'Transmissão Offline',
+      title: initialConfig?.title ?? 'Transmissão Offline',
       category: defaultCategory,
       tags: [],
       viewerCount: 0,
@@ -60,6 +80,14 @@ export class StreamChannel implements ISubject {
       isAudioMuted: false,
       strikeCount: 0
     };
+  }
+
+  public getStreamConfig(): Readonly<StreamConfigCanal> | undefined {
+    return this.streamConfig;
+  }
+
+  public getActiveLiveId(): LiveId | undefined {
+    return this.activeLiveId;
   }
 
   /**
@@ -113,33 +141,58 @@ export class StreamChannel implements ISubject {
   }
 
   /**
-   * Inicia a transmissão ao vivo na plataforma (Twitch, YouTube ou Kick)
+   * Inicia a transmissão ao vivo na plataforma (Twitch, YouTube ou Kick).
    */
   public async goLive(
-    title: string, 
-    category: string, 
+    titleOrConfig?: string | StreamConfigCanal,
+    category = this.currentMetadata.category,
     tags: string[] = ['gaming', 'live'],
-    viewerCount = 1
+    viewerCount = 1,
+    customLiveId?: LiveId
   ): Promise<NotificationReport> {
+    let resolvedTitle: string;
+    if (typeof titleOrConfig === 'object' && titleOrConfig !== null) {
+      this.streamConfig = titleOrConfig;
+      resolvedTitle = titleOrConfig.title;
+    } else if (typeof titleOrConfig === 'string') {
+      resolvedTitle = titleOrConfig;
+    } else if (this.streamConfig) {
+      resolvedTitle = this.streamConfig.title;
+    } else {
+      throw new Error('Título ou StreamConfig é obrigatório para abrir a transmissão.');
+    }
+
+    const startedAt = new Date();
+    this.liveSequence += 1;
+    this.activeLiveId = customLiveId ?? liveId(`live_${this.channelId}_${this.liveSequence}`);
     this.status = 'LIVE';
     this.currentMetadata = {
       ...this.currentMetadata,
-      title,
+      title: resolvedTitle,
       category,
       tags,
       viewerCount,
-      startedAt: new Date()
+      startedAt
     };
 
     const event: StreamEvent = {
       type: 'STREAM_STARTED',
       platform: this.platform,
       channelId: this.channelId,
-      timestamp: new Date(),
+      timestamp: startedAt,
       payload: { ...this.currentMetadata }
     };
 
-    return this.notify(event);
+    const report = await this.notify(event);
+
+    this.eventBus?.publicar({
+      tipo: 'LiveIniciada',
+      live: this.activeLiveId,
+      canal: canalId(this.channelId),
+      em: startedAt
+    });
+
+    return report;
   }
 
   /**
@@ -171,7 +224,7 @@ export class StreamChannel implements ISubject {
   /**
    * Processamento e Moderação de Chat (AutoMod)
    */
-  public async processChatMessage(sender: string, message: string): Promise<NotificationReport> {
+  public async processChatMessage(_sender: string, message: string): Promise<NotificationReport> {
     const isToxic = message.toLowerCase().includes('hate') || message.toLowerCase().includes('hack') || message.toLowerCase().includes('doxx');
     const isSpam = message.length > 150 || (message.match(/http/g) || []).length > 2;
     const hasViolation = isToxic || isSpam;
@@ -203,8 +256,8 @@ export class StreamChannel implements ISubject {
    * Moderação Automática de Segurança Visual: Nudez (NSFW) e Gore
    */
   public async flagContentSafetyViolation(
-    flagType: 'GORE' | 'NUDITY_NSFW', 
-    confidenceScore: number, 
+    flagType: 'GORE' | 'NUDITY_NSFW',
+    confidenceScore: number,
     frameDetail: string,
     severity: ModerationSeverity = 'CRITICAL'
   ): Promise<NotificationReport> {
@@ -244,7 +297,7 @@ export class StreamChannel implements ISubject {
    * Moderação Automática de Direitos Autorais / DMCA (Content ID & Audio Fingerprint)
    */
   public async flagCopyrightDMCA(
-    songOrVideoTitle: string, 
+    songOrVideoTitle: string,
     confidenceScore: number
   ): Promise<NotificationReport> {
     this.currentMetadata.isAudioMuted = true;
@@ -311,7 +364,7 @@ export class StreamChannel implements ISubject {
    * Ação manual tomada por um Moderador Humano
    */
   public async executeModeratorAction(
-    moderatorId: string, 
+    moderatorId: string,
     actionDescription: string
   ): Promise<NotificationReport> {
     const moderationInfo: ModerationPayload = {
@@ -342,19 +395,30 @@ export class StreamChannel implements ISubject {
    * Encerra a transmissão ao vivo
    */
   public async endLive(): Promise<NotificationReport> {
+    const endedAt = new Date();
     this.status = 'ENDED';
-    this.currentMetadata.endedAt = new Date();
+    this.currentMetadata.endedAt = endedAt;
 
     const event: StreamEvent = {
       type: 'STREAM_ENDED',
       platform: this.platform,
       channelId: this.channelId,
-      timestamp: new Date(),
+      timestamp: endedAt,
       payload: { ...this.currentMetadata }
     };
 
     const report = await this.notify(event);
+    const closedLiveId = this.activeLiveId ?? liveId(`live_${this.channelId}`);
+    this.activeLiveId = undefined;
     this.status = 'OFFLINE';
+
+    this.eventBus?.publicar({
+      tipo: 'LiveEncerrada',
+      live: closedLiveId,
+      canal: canalId(this.channelId),
+      em: endedAt
+    });
+
     return report;
   }
 

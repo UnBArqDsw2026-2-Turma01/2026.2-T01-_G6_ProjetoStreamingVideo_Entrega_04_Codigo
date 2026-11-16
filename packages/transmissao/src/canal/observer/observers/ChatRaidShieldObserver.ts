@@ -1,6 +1,6 @@
 import { IObserver } from '../interfaces.js';
-import { StreamEvent } from '../../../types/events.js';
-import { ChatRaidVelocityFilter, ChatMessageRecord, RaidDetectionResult } from '../../../engine/algorithms/ChatRaidVelocityFilter.js';
+import { StreamEvent } from '../../types/events.js';
+import { ChatRaidVelocityFilter, ChatMessageRecord, RaidDetectionResult } from '../../algorithms/ChatRaidVelocityFilter.js';
 
 /**
  * ChatRaidShieldObserver (GoF Observer)

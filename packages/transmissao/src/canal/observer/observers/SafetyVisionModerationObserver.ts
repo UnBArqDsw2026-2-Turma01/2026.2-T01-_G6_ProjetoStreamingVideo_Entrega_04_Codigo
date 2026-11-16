@@ -1,6 +1,6 @@
 import { IObserver } from '../interfaces.js';
-import { StreamEvent } from '../../../types/events.js';
-import { ComputerVisionFilter, VisionSafetyReport } from '../../../engine/algorithms/ComputerVisionFilter.js';
+import { StreamEvent } from '../../types/events.js';
+import { ComputerVisionFilter, VisionSafetyReport } from '../../algorithms/ComputerVisionFilter.js';
 import fs from 'node:fs';
 
 /**

@@ -1,22 +1,19 @@
-import { ChatRaidShieldObserver } from '../patterns/observer/observers/ChatRaidShieldObserver.js';
-import { PiracyVideoRestreamObserver } from '../patterns/observer/observers/PiracyVideoRestreamObserver.js';
-import { VideoPerceptualHasher } from '../engine/algorithms/VideoPerceptualHasher.js';
-import { ChatRaidVelocityFilter } from '../engine/algorithms/ChatRaidVelocityFilter.js';
+import { ChatRaidShieldObserver } from '../../src/canal/observer/observers/ChatRaidShieldObserver.js';
+import { PiracyVideoRestreamObserver } from '../../src/canal/observer/observers/PiracyVideoRestreamObserver.js';
+import { VideoPerceptualHasher } from '../../src/canal/algorithms/VideoPerceptualHasher.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
-import { StreamChannel } from '../patterns/observer/StreamChannel.js';
-import { AutoModObserver } from '../patterns/observer/observers/AutoModObserver.js';
-import { SafetyVisionModerationObserver } from '../patterns/observer/observers/SafetyVisionModerationObserver.js';
-import { CopyrightDMCAAudioObserver } from '../patterns/observer/observers/CopyrightDMCAAudioObserver.js';
-import { HumanModeratorDashboardObserver } from '../patterns/observer/observers/HumanModeratorDashboardObserver.js';
-import { DiscordWebhookObserver } from '../patterns/observer/observers/DiscordWebhookObserver.js';
-import { PushNotificationObserver } from '../patterns/observer/observers/PushNotificationObserver.js';
-import { SynchronousBlockingDispatchStrategy } from '../patterns/strategy/SynchronousBlockingDispatchStrategy.js';
-import { AsynchronousConcurrentDispatchStrategy } from '../patterns/strategy/AsynchronousConcurrentDispatchStrategy.js';
-import { TextEntropyAnalyzer } from '../engine/algorithms/TextEntropyAnalyzer.js';
-import { ComputerVisionFilter } from '../engine/algorithms/ComputerVisionFilter.js';
-import { AcousticFingerprinter } from '../engine/algorithms/AcousticFingerprinter.js';
+import { StreamChannel } from '../../src/canal/observer/StreamChannel.js';
+import { AutoModObserver } from '../../src/canal/observer/observers/AutoModObserver.js';
+import { SafetyVisionModerationObserver } from '../../src/canal/observer/observers/SafetyVisionModerationObserver.js';
+import { CopyrightDMCAAudioObserver } from '../../src/canal/observer/observers/CopyrightDMCAAudioObserver.js';
+import { HumanModeratorDashboardObserver } from '../../src/canal/observer/observers/HumanModeratorDashboardObserver.js';
+import { DiscordWebhookObserver } from '../../src/canal/observer/observers/DiscordWebhookObserver.js';
+import { PushNotificationObserver } from '../../src/canal/observer/observers/PushNotificationObserver.js';
+import { SynchronousBlockingDispatchStrategy } from '../../src/canal/strategy/SynchronousBlockingDispatchStrategy.js';
+import { ComputerVisionFilter } from '../../src/canal/algorithms/ComputerVisionFilter.js';
+import { AcousticFingerprinter } from '../../src/canal/algorithms/AcousticFingerprinter.js';
 
 describe('Padrão GoF Observer com Moderação Reativa Completa - SubEquipe 03', () => {
 
@@ -86,7 +83,7 @@ describe('Padrão GoF Observer com Moderação Reativa Completa - SubEquipe 03',
     const safetyVision = new SafetyVisionModerationObserver('obs-safety', 'Vision Safety');
     channel.attach(safetyVision);
 
-    const skinPpmPath = path.resolve(process.cwd(), 'test_media/skin_sample.ppm');
+    const skinPpmPath = path.resolve(import.meta.dirname, 'test_media/skin_sample.ppm');
     const report = ComputerVisionFilter.analyzePpmFile(skinPpmPath);
 
     assert.strictEqual(report.isNsfwNudity, true);
@@ -105,7 +102,7 @@ describe('Padrão GoF Observer com Moderação Reativa Completa - SubEquipe 03',
     const safetyVision = new SafetyVisionModerationObserver('obs-safety', 'Vision Safety');
     channel.attach(safetyVision);
 
-    const gorePpmPath = path.resolve(process.cwd(), 'test_media/gore_sample.ppm');
+    const gorePpmPath = path.resolve(import.meta.dirname, 'test_media/gore_sample.ppm');
     const report = ComputerVisionFilter.analyzePpmFile(gorePpmPath);
 
     assert.strictEqual(report.isGoreDetected, true);
@@ -141,7 +138,7 @@ describe('Padrão GoF Observer com Moderação Reativa Completa - SubEquipe 03',
     const humanMod = new HumanModeratorDashboardObserver('obs-mod', 'ModView Eskimosin', 'mod_adm_brasil');
     channel.attach(humanMod);
 
-    await channel.flagContentSafetyViolation('GORE', 85, 'test_media/gore_sample.ppm', 'CRITICAL');
+    await channel.flagContentSafetyViolation('GORE', 85, path.resolve(import.meta.dirname, 'test_media/gore_sample.ppm'), 'CRITICAL');
     await channel.executeModeratorAction('mod_adm_brasil', 'BAN_PERMANENT_USER: spammer99');
 
     const history = humanMod.getActionsHistory();
@@ -206,7 +203,7 @@ describe('Padrão GoF Observer com Moderação Reativa Completa - SubEquipe 03',
     const safetyVision = new SafetyVisionModerationObserver('obs-safety', 'Vision Safety');
     channel.attach(safetyVision);
 
-    const hentaiPpmPath = path.resolve(process.cwd(), 'test_media/hentai_anime_sample.ppm');
+    const hentaiPpmPath = path.resolve(import.meta.dirname, 'test_media/hentai_anime_sample.ppm');
     const report = ComputerVisionFilter.analyzePpmFile(hentaiPpmPath);
 
     assert.strictEqual(report.isAnimeHentaiDetected, true);

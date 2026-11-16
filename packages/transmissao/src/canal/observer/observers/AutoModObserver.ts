@@ -1,6 +1,6 @@
 import { IObserver } from '../interfaces.js';
-import { StreamEvent } from '../../../types/events.js';
-import { TextEntropyAnalyzer } from '../../../engine/algorithms/TextEntropyAnalyzer.js';
+import { StreamEvent } from '../../types/events.js';
+import { TextEntropyAnalyzer } from '../../algorithms/TextEntropyAnalyzer.js';
 
 /**
  * AutoModObserver (GoF Observer)

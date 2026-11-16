@@ -1,6 +1,6 @@
 import { IObserver } from '../interfaces.js';
-import { StreamEvent } from '../../../types/events.js';
-import { VideoPerceptualHasher, PerceptualHashResult } from '../../../engine/algorithms/VideoPerceptualHasher.js';
+import { StreamEvent } from '../../types/events.js';
+import { VideoPerceptualHasher, PerceptualHashResult } from '../../algorithms/VideoPerceptualHasher.js';
 
 /**
  * PiracyVideoRestreamObserver (GoF Observer)
