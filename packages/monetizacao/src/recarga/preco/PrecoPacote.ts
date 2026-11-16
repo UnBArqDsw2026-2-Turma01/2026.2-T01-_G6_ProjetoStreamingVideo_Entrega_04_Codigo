@@ -1,4 +1,4 @@
-import type { Dinheiro } from "../../dominio";
+import type { Dinheiro } from "../../comum/dominio";
 import type { Pacote } from "../Pacote";
 import type { Preco } from "./Preco";
 

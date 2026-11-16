@@ -1,10 +1,10 @@
-import { Dinheiro } from "../../../src/dominio";
+import { Dinheiro } from "../../../src/comum/dominio";
 import {
   AdaptadorProcessadorSimulado,
   ErroGatewayIndisponivel,
   ProcessadorSimulado,
   assinarNotificacao,
-} from "../../../src/f1-recarga";
+} from "../../../src/recarga";
 
 describe("AdaptadorProcessadorSimulado", () => {
   const criar = () => {

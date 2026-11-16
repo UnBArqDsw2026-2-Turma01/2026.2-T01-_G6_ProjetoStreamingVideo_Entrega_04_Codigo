@@ -1,4 +1,4 @@
-import { ErroDominio, StatusTransacao, Transacao, Usuario } from "../../src/dominio";
+import { ErroDominio, StatusTransacao, Transacao, Usuario } from "../../../src/comum/dominio";
 
 class TransacaoDeTeste extends Transacao {
   constructor(usuario: Usuario) {

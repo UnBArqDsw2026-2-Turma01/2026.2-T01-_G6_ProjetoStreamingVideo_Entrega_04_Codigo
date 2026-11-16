@@ -1,4 +1,4 @@
-import type { Dinheiro } from "../../dominio";
+import type { Dinheiro } from "../../comum/dominio";
 
 /**
  * Component do Decorator: qualquer coisa que saiba dizer quanto custa.

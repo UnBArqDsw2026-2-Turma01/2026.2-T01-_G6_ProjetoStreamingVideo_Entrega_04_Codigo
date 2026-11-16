@@ -1,4 +1,4 @@
-import { Dinheiro, ErroDominio } from "../../src/dominio";
+import { Dinheiro, ErroDominio } from "../../../src/comum/dominio";
 
 describe("Dinheiro", () => {
   test("converte reais em centavos inteiros", () => {

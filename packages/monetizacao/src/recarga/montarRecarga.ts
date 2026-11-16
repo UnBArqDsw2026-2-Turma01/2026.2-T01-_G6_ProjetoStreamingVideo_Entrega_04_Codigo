@@ -1,6 +1,6 @@
-import { GeradorId, RepositorioEmMemoria } from "../compartilhado";
-import type { Usuario } from "../dominio";
-import type { ServicoFinanceiro } from "../financeiro";
+import { GeradorId, RepositorioEmMemoria } from "../comum/compartilhado";
+import type { Usuario } from "../comum/dominio";
+import type { ServicoFinanceiro } from "../comum/financeiro";
 import { CONFIGURACAO_PRECO, PACOTES } from "./catalogo";
 import { ProxyConfirmacaoSegura, ServicoConfirmacao, type ConfirmadorPagamento } from "./confirmacao";
 import type { Pacote } from "./Pacote";

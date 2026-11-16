@@ -1,6 +1,6 @@
 import { MPBadRequestError, MPConnectionError, MPRateLimitError, MPServerError } from "mercadopago";
-import { Dinheiro } from "../../../src/dominio";
-import { AdaptadorMercadoPago, ErroGatewayIndisponivel, assinarNotificacao } from "../../../src/f1-recarga";
+import { Dinheiro } from "../../../src/comum/dominio";
+import { AdaptadorMercadoPago, ErroGatewayIndisponivel, assinarNotificacao } from "../../../src/recarga";
 import { FakeSdkMercadoPago } from "../fakes";
 
 const SEGREDO = "segredo-mp";

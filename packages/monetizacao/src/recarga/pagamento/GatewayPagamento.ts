@@ -1,4 +1,4 @@
-import type { Dinheiro } from "../../dominio";
+import type { Dinheiro } from "../../comum/dominio";
 
 /** Situação de um pagamento, já traduzida para o vocabulário do sistema. */
 export const StatusPagamento = {

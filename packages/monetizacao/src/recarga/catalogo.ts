@@ -1,4 +1,4 @@
-import { Dinheiro } from "../dominio";
+import { Dinheiro } from "../comum/dominio";
 import type { Pacote } from "./Pacote";
 import type { ConfiguracaoPreco } from "./ServicoRecarga";
 

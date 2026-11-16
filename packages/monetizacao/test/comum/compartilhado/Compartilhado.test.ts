@@ -1,4 +1,4 @@
-import { GeradorId, RepositorioEmMemoria } from "../../src/compartilhado";
+import { GeradorId, RepositorioEmMemoria } from "../../../src/comum/compartilhado";
 
 describe("GeradorId", () => {
   test("gera identificadores sequenciais por prefixo", () => {

@@ -1,7 +1,7 @@
 /** Montagem comum aos testes da F1: usuários, pacotes, gateways simulados e controller. */
-import { RepositorioEmMemoria } from "../../src/compartilhado";
-import { Dinheiro, Usuario } from "../../src/dominio";
-import { ServicoFinanceiro } from "../../src/financeiro";
+import { RepositorioEmMemoria } from "../../src/comum/compartilhado";
+import { Dinheiro, Usuario } from "../../src/comum/dominio";
+import { ServicoFinanceiro } from "../../src/comum/financeiro";
 import {
   AdaptadorProcessadorSimulado,
   ProcessadorSimulado,
@@ -10,7 +10,7 @@ import {
   type ConfiguracaoPreco,
   type NotificacaoPagamento,
   type Pacote,
-} from "../../src/f1-recarga";
+} from "../../src/recarga";
 
 export const SEGREDO_A = "segredo-a";
 export const SEGREDO_B = "segredo-b";

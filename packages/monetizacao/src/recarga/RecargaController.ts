@@ -1,5 +1,5 @@
-import type { RepositorioEmMemoria } from "../compartilhado";
-import { ErroDominio, type Usuario } from "../dominio";
+import type { RepositorioEmMemoria } from "../comum/compartilhado";
+import { ErroDominio, type Usuario } from "../comum/dominio";
 import { EfeitoConfirmacao, type ConfirmadorPagamento, type ResultadoConfirmacao } from "./confirmacao";
 import type { OfertaPacote } from "./Pacote";
 import type { NotificacaoPagamento } from "./pagamento";

@@ -1,4 +1,4 @@
-import { Dinheiro, ErroDominio, Transacao, Usuario } from "../dominio";
+import { Dinheiro, ErroDominio, Transacao, Usuario } from "../comum/dominio";
 
 /** Como o espectador paga a recarga (Entrega 2: saldo do criador ou processador externo). */
 export const MetodoRecarga = {

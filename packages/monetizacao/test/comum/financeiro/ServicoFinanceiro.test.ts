@@ -1,5 +1,5 @@
-import { Dinheiro, Usuario } from "../../src/dominio";
-import { ServicoFinanceiro } from "../../src/financeiro";
+import { Dinheiro, Usuario } from "../../../src/comum/dominio";
+import { ServicoFinanceiro } from "../../../src/comum/financeiro";
 
 describe("ServicoFinanceiro", () => {
   const criarUsuarios = () => ({

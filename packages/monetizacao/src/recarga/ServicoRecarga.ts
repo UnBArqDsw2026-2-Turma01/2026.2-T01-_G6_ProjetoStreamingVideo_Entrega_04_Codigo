@@ -1,6 +1,6 @@
-import type { GeradorId, RepositorioEmMemoria } from "../compartilhado";
-import { ErroDominio, type Dinheiro, type Usuario } from "../dominio";
-import type { ServicoFinanceiro } from "../financeiro";
+import type { GeradorId, RepositorioEmMemoria } from "../comum/compartilhado";
+import { ErroDominio, type Dinheiro, type Usuario } from "../comum/dominio";
+import type { ServicoFinanceiro } from "../comum/financeiro";
 import type { OfertaPacote, Pacote } from "./Pacote";
 import {
   ErroGatewayIndisponivel,

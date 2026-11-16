@@ -1,6 +1,6 @@
-import { GeradorId, RepositorioEmMemoria } from "../../src/compartilhado";
-import { Dinheiro, ErroDominio, StatusTransacao, Usuario } from "../../src/dominio";
-import { ServicoFinanceiro } from "../../src/financeiro";
+import { GeradorId, RepositorioEmMemoria } from "../../src/comum/compartilhado";
+import { Dinheiro, ErroDominio, StatusTransacao, Usuario } from "../../src/comum/dominio";
+import { ServicoFinanceiro } from "../../src/comum/financeiro";
 import {
   AdaptadorProcessadorSimulado,
   ErroGatewayIndisponivel,
@@ -11,7 +11,7 @@ import {
   ServicoRecarga,
   montarRecarga,
   type GatewayPagamento,
-} from "../../src/f1-recarga";
+} from "../../src/recarga";
 import { criarCenario, pacotes } from "./cenario";
 
 /** Três meios simulados (A, B, C), para os casos com mais de uma alternativa. */

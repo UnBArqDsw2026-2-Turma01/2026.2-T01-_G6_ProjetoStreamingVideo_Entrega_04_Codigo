@@ -1,4 +1,4 @@
-import { Usuario } from "../../src/dominio";
+import { Usuario } from "../../../src/comum/dominio";
 
 describe("Usuario", () => {
   test("nasce com carteira e perfil próprios", () => {

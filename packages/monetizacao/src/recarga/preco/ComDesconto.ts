@@ -1,4 +1,4 @@
-import { Dinheiro, ErroDominio } from "../../dominio";
+import { Dinheiro, ErroDominio } from "../../comum/dominio";
 import type { Preco } from "./Preco";
 import { PrecoDecorator } from "./PrecoDecorator";
 

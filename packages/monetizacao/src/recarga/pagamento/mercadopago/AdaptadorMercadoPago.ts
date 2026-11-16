@@ -1,5 +1,5 @@
 import { MPConnectionError, MPRateLimitError, MercadoPagoConfig, MercadoPagoError, Payment, Preference } from "mercadopago";
-import { Dinheiro } from "../../../dominio";
+import { Dinheiro } from "../../../comum/dominio";
 import { assinaturaConfere } from "../AssinaturaWebhook";
 import { ErroGatewayIndisponivel } from "../ErroGatewayIndisponivel";
 import {

@@ -1,5 +1,5 @@
-import type { RepositorioEmMemoria } from "../../compartilhado";
-import type { ServicoFinanceiro } from "../../financeiro";
+import type { RepositorioEmMemoria } from "../../comum/compartilhado";
+import type { ServicoFinanceiro } from "../../comum/financeiro";
 import { StatusPagamento, type GatewayPagamento, type NotificacaoPagamento } from "../pagamento";
 import type { Recarga } from "../Recarga";
 import { EfeitoConfirmacao, type ConfirmadorPagamento, type ResultadoConfirmacao } from "./ConfirmadorPagamento";

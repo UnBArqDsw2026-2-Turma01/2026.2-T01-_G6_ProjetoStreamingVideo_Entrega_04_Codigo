@@ -1,11 +1,11 @@
-import { Dinheiro, ErroDominio } from "../../src/dominio";
+import { Dinheiro, ErroDominio } from "../../src/comum/dominio";
 import {
   ComDesconto,
   ComImposto,
   ComTaxaFixa,
   PrecoPacote,
   type Pacote,
-} from "../../src/f1-recarga";
+} from "../../src/recarga";
 
 const pacote300: Pacote = { id: "p300", quantidadeMoedaVirtual: 300, valorBase: Dinheiro.deReais(20) };
 

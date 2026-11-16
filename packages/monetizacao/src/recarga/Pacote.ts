@@ -1,4 +1,4 @@
-import type { Dinheiro } from "../dominio";
+import type { Dinheiro } from "../comum/dominio";
 
 /** Pacote de moeda virtual vendido na plataforma (parâmetro de configuração, Entrega 2). */
 export interface Pacote {

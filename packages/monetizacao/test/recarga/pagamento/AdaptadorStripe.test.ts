@@ -1,6 +1,6 @@
 import Stripe from "stripe";
-import { Dinheiro } from "../../../src/dominio";
-import { AdaptadorStripe, ErroGatewayIndisponivel, assinarNotificacao } from "../../../src/f1-recarga";
+import { Dinheiro } from "../../../src/comum/dominio";
+import { AdaptadorStripe, ErroGatewayIndisponivel, assinarNotificacao } from "../../../src/recarga";
 import { FakeSdkStripe } from "../fakes";
 
 const SEGREDO = "segredo-stripe";

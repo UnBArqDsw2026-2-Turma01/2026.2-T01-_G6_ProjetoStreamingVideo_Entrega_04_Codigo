@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { Dinheiro } from "../../../dominio";
+import { Dinheiro } from "../../../comum/dominio";
 import { assinaturaConfere } from "../AssinaturaWebhook";
 import { ErroGatewayIndisponivel } from "../ErroGatewayIndisponivel";
 import {

@@ -1,4 +1,4 @@
-import { Carteira, Dinheiro, ErroDominio } from "../../src/dominio";
+import { Carteira, Dinheiro, ErroDominio } from "../../../src/comum/dominio";
 
 describe("Carteira", () => {
   test("começa com saldos zerados", () => {

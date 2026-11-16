@@ -4,7 +4,7 @@
  */
 import { MPNotFoundError, type Payment, type Preference } from "mercadopago";
 import Stripe from "stripe";
-import type { SdkMercadoPago, SdkStripe } from "../../src/f1-recarga";
+import type { SdkMercadoPago, SdkStripe } from "../../src/recarga";
 
 type PreferenceCreateData = Parameters<Preference["create"]>[0];
 type PreferenceGetData = Parameters<Preference["get"]>[0];

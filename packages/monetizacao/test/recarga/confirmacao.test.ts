@@ -1,10 +1,10 @@
-import { StatusTransacao } from "../../src/dominio";
+import { StatusTransacao } from "../../src/comum/dominio";
 import {
   EfeitoConfirmacao,
   MetodoRecarga,
   ProxyConfirmacaoSegura,
   ServicoConfirmacao,
-} from "../../src/f1-recarga";
+} from "../../src/recarga";
 import { SEGREDO_A, SEGREDO_B, aviso, criarCenario } from "./cenario";
 
 async function recargaPendente() {

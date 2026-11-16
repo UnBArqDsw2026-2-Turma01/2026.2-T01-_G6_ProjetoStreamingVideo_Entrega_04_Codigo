@@ -1,7 +1,7 @@
-import { RepositorioEmMemoria } from "../../src/compartilhado";
-import { Usuario } from "../../src/dominio";
-import { ServicoFinanceiro } from "../../src/financeiro";
-import { PACOTES, REPASSE_POR_MOEDA, montarRecarga } from "../../src/f1-recarga";
+import { RepositorioEmMemoria } from "../../src/comum/compartilhado";
+import { Usuario } from "../../src/comum/dominio";
+import { ServicoFinanceiro } from "../../src/comum/financeiro";
+import { PACOTES, REPASSE_POR_MOEDA, montarRecarga } from "../../src/recarga";
 
 describe("Catálogo da plataforma", () => {
   test("o desconto cresce com o tamanho do pacote e o preço por moeda só cai", () => {

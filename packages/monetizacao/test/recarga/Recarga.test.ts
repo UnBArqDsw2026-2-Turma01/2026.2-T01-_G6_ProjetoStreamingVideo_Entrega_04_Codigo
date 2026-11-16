@@ -1,5 +1,5 @@
-import { Dinheiro, ErroDominio, StatusTransacao, Usuario } from "../../src/dominio";
-import { MetodoRecarga, Recarga } from "../../src/f1-recarga";
+import { Dinheiro, ErroDominio, StatusTransacao, Usuario } from "../../src/comum/dominio";
+import { MetodoRecarga, Recarga } from "../../src/recarga";
 
 const criar = () =>
   new Recarga(
