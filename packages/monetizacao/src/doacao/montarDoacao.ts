@@ -1,7 +1,7 @@
-import { GeradorId, RepositorioEmMemoria } from "../compartilhado";
-import type { NotificadorChat } from "../contratos";
-import type { Usuario } from "../dominio";
-import type { ServicoFinanceiro } from "../financeiro";
+import type { ChatPort, EventBus, TransmissaoPort } from "@g6/shared-kernel";
+import { GeradorId, RepositorioEmMemoria } from "../comum/compartilhado";
+import type { Usuario } from "../comum/dominio";
+import type { ServicoFinanceiro } from "../comum/financeiro";
 import { Doacao } from "./Doacao";
 import { DoacaoController } from "./DoacaoController";
 import { MediatorDoacao } from "./MediatorDoacao";
@@ -9,12 +9,14 @@ import { MediatorDoacaoComMensagem } from "./MediatorDoacaoComMensagem";
 import { ServicoDoacao } from "./ServicoDoacao";
 
 /**
- * Composição da F2: liga controller, facade, mediators, financeiro e chat.
- * Usado pela demonstração e pelos testes.
+ * Composição da F2: liga facade, mediators, financeiro, chat, transmissão e event bus.
+ * Usado pelos testes e pelo wiring da aplicação.
  */
 export function montarDoacao(dependencias: {
   financeiro: ServicoFinanceiro;
-  notificadorChat: NotificadorChat;
+  chat: ChatPort;
+  transmissao: TransmissaoPort;
+  eventBus: EventBus;
   usuarios: RepositorioEmMemoria<Usuario>;
   geradorId?: GeradorId;
   repositorioDoacoes?: RepositorioEmMemoria<Doacao>;
@@ -30,7 +32,7 @@ export function montarDoacao(dependencias: {
   );
   const mediadorComMensagem = new MediatorDoacaoComMensagem(
     dependencias.financeiro,
-    dependencias.notificadorChat,
+    dependencias.chat,
     repositorioDoacoes,
     geradorId,
   );
@@ -39,7 +41,10 @@ export function montarDoacao(dependencias: {
     mediadorSimples,
     mediadorComMensagem,
     dependencias.financeiro,
-    dependencias.notificadorChat,
+    dependencias.chat,
+    dependencias.transmissao,
+    dependencias.eventBus,
+    dependencias.usuarios,
   );
   const controller = new DoacaoController(servico, dependencias.usuarios);
 

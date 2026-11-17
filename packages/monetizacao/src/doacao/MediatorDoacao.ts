@@ -1,6 +1,6 @@
-import type { GeradorId, RepositorioEmMemoria } from "../compartilhado";
-import { ErroDominio, type Usuario } from "../dominio";
-import type { ServicoFinanceiro } from "../financeiro";
+import type { GeradorId, RepositorioEmMemoria } from "../comum/compartilhado";
+import { ErroDominio, type Usuario } from "../comum/dominio";
+import type { ServicoFinanceiro } from "../comum/financeiro";
 import { Doacao } from "./Doacao";
 
 /** Resultado da doação simples (sem mensagem no chat). */

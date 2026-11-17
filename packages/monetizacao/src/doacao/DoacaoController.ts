@@ -1,7 +1,6 @@
-import type { RepositorioEmMemoria } from "../compartilhado";
-import { ErroDominio, type Usuario } from "../dominio";
-import type { ResultadoDoacaoSimples } from "./MediatorDoacao";
-import type { ResultadoDoacaoComMensagem } from "./MediatorDoacaoComMensagem";
+import type { ComprovanteDoacao, LiveId, MoedaVirtual, Resultado, Sessao } from "@g6/shared-kernel";
+import type { RepositorioEmMemoria } from "../comum/compartilhado";
+import { ErroDominio, type Usuario } from "../comum/dominio";
 import type { OpcoesDoacao, ServicoDoacao } from "./ServicoDoacao";
 
 /**
@@ -22,55 +21,14 @@ export class DoacaoController {
     return this.servicoDoacao.consultarOpcoesDoacao(canal, doador);
   }
 
-  /** Doação simples (sem mensagem destacada). */
+  /** Encaminha ao `DoacaoPort` da facade. */
   doar(
-    doadorId: string,
-    criadorId: string,
-    quantidadeMoedaVirtual: number,
-  ): ResultadoDoacaoSimples {
-    const doador = this.obterUsuarioOuFalhar(doadorId, "Espectador");
-    const criador = this.obterUsuarioOuFalhar(criadorId, "Criador");
-
-    const resultado = this.servicoDoacao.doar(doador, criador, quantidadeMoedaVirtual);
-    const { doacao } = resultado;
-
-    console.log(
-      `[F2 Facade] ${doacao.id} (${doacao.status}): ${doador.nome} doou ${quantidadeMoedaVirtual} de moeda virtual para ${criador.nome} ` +
-        `· repasse de ${doacao.valorRepasse.formatar()}`,
-    );
-
-    return resultado;
-  }
-
-  /** Doação com mensagem destacada no chat. */
-  doarComMensagem(
-    doadorId: string,
-    criadorId: string,
-    quantidadeMoedaVirtual: number,
-    mensagem: string,
-  ): ResultadoDoacaoComMensagem {
-    const doador = this.obterUsuarioOuFalhar(doadorId, "Espectador");
-    const criador = this.obterUsuarioOuFalhar(criadorId, "Criador");
-
-    const resultado = this.servicoDoacao.doarComMensagem(
-      doador,
-      criador,
-      quantidadeMoedaVirtual,
-      mensagem,
-    );
-    const { doacao } = resultado;
-
-    console.log(
-      `[F2 Facade] ${doacao.id} (${doacao.status}): ${doador.nome} doou ${quantidadeMoedaVirtual} de moeda virtual para ${criador.nome} ` +
-        `[${doacao.faixa.codigo}: ${doacao.faixa.cor}, fixação de ${doacao.faixa.tempoFixacaoMin} min] ` +
-        `· repasse de ${doacao.valorRepasse.formatar()}`,
-    );
-
-    if (resultado.avisoChat) {
-      console.warn(`[F2 Facade] Aviso: ${resultado.avisoChat}`);
-    }
-
-    return resultado;
+    sessao: Sessao,
+    live: LiveId,
+    valor: MoedaVirtual,
+    mensagem?: string,
+  ): Promise<Resultado<ComprovanteDoacao>> {
+    return this.servicoDoacao.doar(sessao, live, valor, mensagem);
   }
 
   private obterUsuarioOuFalhar(id: string, papel: string): Usuario {

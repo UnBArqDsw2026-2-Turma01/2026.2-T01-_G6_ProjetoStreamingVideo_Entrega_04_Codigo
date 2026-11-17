@@ -1,6 +1,7 @@
-import { ErroDominio, type Dinheiro, type Usuario } from "../dominio";
+import type { Dinheiro, Usuario } from "../comum/dominio";
+import { ErroDominio } from "../comum/dominio";
+import { FaixaDestaque, type PropriedadesFaixa } from "../destaque";
 import { Doacao } from "./Doacao";
-import { FaixaDestaque, type PropriedadesFaixa } from "./FaixaDestaque";
 
 /**
  * Doação com mensagem destacada no chat (SC01, SC02).

@@ -1,37 +1,41 @@
-import type { GeradorId, RepositorioEmMemoria } from "../compartilhado";
-import type { NotificadorChat } from "../contratos";
-import { ErroDominio, type Usuario } from "../dominio";
-import type { ServicoFinanceiro } from "../financeiro";
+import type { ChatPort, LiveId } from "@g6/shared-kernel";
+import { usuarioId } from "@g6/shared-kernel";
+import type { GeradorId, RepositorioEmMemoria } from "../comum/compartilhado";
+import { ErroDominio, type Usuario } from "../comum/dominio";
+import type { ServicoFinanceiro } from "../comum/financeiro";
+import { montarMensagemDestacada } from "../destaque";
 import { Doacao } from "./Doacao";
 import { DoacaoComMensagem } from "./DoacaoComMensagem";
 
-/** Resultado da doação com mensagem e estado da notificação ao chat. */
+/** Resultado da doação com mensagem e estado da entrega ao chat. */
 export interface ResultadoDoacaoComMensagem {
   readonly doacao: DoacaoComMensagem;
-  readonly notificacaoChatEnviada: boolean;
-  readonly avisoChat?: string;
+  readonly destaqueEntregue: boolean;
+  readonly aviso?: string;
 }
 
 /**
  * Mediator da doação com mensagem destacada (Padrão GoF: Mediator).
- * Orquestra Financeiro e NotificadorChat; falha no chat não invalida a doação (D05).
+ * Orquestra Financeiro e ChatPort; falha no chat não invalida a doação (D05).
  */
 export class MediatorDoacaoComMensagem {
   constructor(
     private readonly servicoFinanceiro: ServicoFinanceiro,
-    private readonly notificadorChat: NotificadorChat,
+    private readonly chat: ChatPort,
     private readonly repositorioDoacoes: RepositorioEmMemoria<Doacao>,
     private readonly geradorId: GeradorId,
   ) {}
 
-  processar(
+  async processar(
     doador: Usuario,
     criador: Usuario,
     quantidadeMoedaVirtual: number,
     mensagem: string,
-  ): ResultadoDoacaoComMensagem {
+    live: LiveId,
+  ): Promise<ResultadoDoacaoComMensagem> {
     this.validarPartes(doador, criador);
 
+    // Montagem / validação da mensagem antes do débito (E03: DoacaoComMensagem).
     const doacao = new DoacaoComMensagem(
       this.geradorId.proximo("doacao"),
       doador,
@@ -40,6 +44,13 @@ export class MediatorDoacaoComMensagem {
       mensagem,
     );
 
+    const destacada = montarMensagemDestacada(quantidadeMoedaVirtual, mensagem, {
+      id: doacao.id,
+      autor: usuarioId(doador.id),
+      nomeAutor: doador.nome,
+      em: new Date(),
+    });
+
     this.transferirOuFalhar(doador, criador, doacao);
 
     doacao.concluir();
@@ -47,26 +58,16 @@ export class MediatorDoacaoComMensagem {
     criador.carteira.registrarTransacao(doacao);
     this.repositorioDoacoes.salvar(doacao);
 
-    let notificacaoChatEnviada = false;
-    let avisoChat: string | undefined;
-
-    try {
-      this.notificadorChat.exibirMensagemDestacada({
-        doacaoId: doacao.id,
-        doador,
-        criador,
-        quantidadeMoedaVirtual: doacao.quantidadeMoedaVirtual,
-        mensagem: doacao.mensagem,
-      });
-      notificacaoChatEnviada = true;
-    } catch (erro) {
-      avisoChat =
-        erro instanceof Error
-          ? `Doação e repasse concluídos, mas o chat falhou ao exibir o destaque: ${erro.message}`
-          : "Doação e repasse concluídos, mas o chat falhou ao exibir o destaque.";
+    const publica = await this.chat.publicarDestacada(live, destacada);
+    if (publica.ok) {
+      return { doacao, destaqueEntregue: true };
     }
 
-    return { doacao, notificacaoChatEnviada, avisoChat };
+    return {
+      doacao,
+      destaqueEntregue: false,
+      aviso: `Doação e repasse concluídos, mas o chat falhou ao exibir o destaque: ${publica.erro.mensagem}`,
+    };
   }
 
   private validarPartes(doador: Usuario, criador: Usuario): void {

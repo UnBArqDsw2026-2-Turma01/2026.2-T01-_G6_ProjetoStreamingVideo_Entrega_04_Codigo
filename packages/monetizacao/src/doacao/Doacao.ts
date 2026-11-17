@@ -1,5 +1,7 @@
-import { ErroDominio, Transacao, type Dinheiro, type Usuario } from "../dominio";
-import { REPASSE_POR_MOEDA } from "../f1-recarga";
+import { Dinheiro, ErroDominio, Transacao, type Usuario } from "../comum/dominio";
+
+/** Repasse ao criador por moeda doada (catálogo da plataforma; abaixo do preço de venda). */
+export const REPASSE_POR_MOEDA = Dinheiro.deCentavos(2);
 
 /**
  * Doação de moeda virtual (Entrega 2: Doacao especializa Transacao).
