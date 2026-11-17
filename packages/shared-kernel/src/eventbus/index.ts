@@ -1,0 +1,1 @@
+export { EventBusEmMemoria } from './event-bus-em-memoria';
