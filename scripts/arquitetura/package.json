@@ -5,9 +5,11 @@
   "description": "Fitness functions da Visão Lógica (#18) com dependency-cruiser. Fica fora das workspaces porque o dependency-cruiser só lê TypeScript com typescript < 7, e o monorepo usa o 7.",
   "scripts": {
     "verificar": "cd ../.. && depcruise --config .dependency-cruiser.cjs packages apps",
-    "violacao": "cd ../.. && depcruise --config .dependency-cruiser.cjs scripts/arquitetura/violacao-proposital"
+    "violacao": "cd ../.. && depcruise --config .dependency-cruiser.cjs scripts/arquitetura/violacao-proposital",
+    "grafo": "node grafo.mjs"
   },
   "devDependencies": {
+    "@viz-js/viz": "3.31.0",
     "dependency-cruiser": "18.7.2",
     "typescript": "6.0.3"
   }

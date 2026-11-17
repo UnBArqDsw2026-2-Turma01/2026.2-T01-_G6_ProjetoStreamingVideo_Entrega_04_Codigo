@@ -62,5 +62,42 @@ module.exports = {
       conditionNames: ['import', 'require', 'node', 'default', 'types'],
       extensions: ['.ts', '.mts', '.js', '.mjs', '.json'],
     },
+    // Grafo da Visão de Implementação (`npm run grafo`): um nó por pacote/app.
+    reporterOptions: {
+      dot: {
+        collapsePattern: '^(?:packages|apps)/[^/]+',
+        theme: {
+          graph: {
+            rankdir: 'TB',
+            splines: 'true',
+            fontname: 'Helvetica',
+            label: 'Grupo 06 · CA-01 — dependências entre pacotes',
+            labelloc: 't',
+          },
+          node: {
+            shape: 'box',
+            style: 'rounded,filled',
+            fontname: 'Helvetica',
+            fillcolor: '#ffffff',
+            color: '#555555',
+          },
+          edge: { color: '#555555', arrowhead: 'vee' },
+          modules: [
+            {
+              criteria: { source: '^packages/shared-kernel' },
+              attributes: { fillcolor: '#fde68a', color: '#b45309', penwidth: '2' },
+            },
+            {
+              criteria: { source: '^packages/' },
+              attributes: { fillcolor: '#dbeafe', color: '#1d4ed8' },
+            },
+            {
+              criteria: { source: '^apps/' },
+              attributes: { fillcolor: '#dcfce7', color: '#15803d' },
+            },
+          ],
+        },
+      },
+    },
   },
 };
