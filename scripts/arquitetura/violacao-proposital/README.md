@@ -8,6 +8,7 @@ código do produto e fica fora da verificação normal, que só analisa `package
 | --- | --- | --- |
 | `packages/chat/src/index.ts` | `chat` → `monetizacao` | `contexto-so-importa-shared-kernel` |
 | `packages/shared-kernel/src/index.ts` | `shared-kernel` → `chat` | `shared-kernel-isolado` |
+| `packages/conteudo/src/index.ts` | `conteudo` → `@g6/pacote-inexistente` (não resolve) | `g6-nao-resolvido` |
 
 `chat` → `shared-kernel` é permitido e aparece de propósito, para mostrar que a regra não
 gera falso positivo no caminho válido.
@@ -15,7 +16,7 @@ gera falso positivo no caminho válido.
 ```bash
 npm install --prefix scripts/arquitetura   # uma vez: dependency-cruiser + typescript 6
 
-# deve falhar (código de saída 2) com as 2 violações da tabela
+# deve falhar (código de saída 3) com as 3 violações da tabela
 npm run violacao --prefix scripts/arquitetura
 
 # deve passar na base real

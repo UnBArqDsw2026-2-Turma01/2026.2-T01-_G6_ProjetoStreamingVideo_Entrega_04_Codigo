@@ -41,6 +41,20 @@ module.exports = {
         pathNot: '(?:^|/)packages/shared-kernel/',
       },
     },
+    {
+      // As regras acima comparam o caminho resolvido. Um `@g6/*` que não
+      // resolve (ex.: sem `npm ci` na raiz, sem os symlinks do workspace)
+      // fica com o nome cru e escaparia delas, dando um falso verde.
+      name: 'g6-nao-resolvido',
+      severity: 'error',
+      comment:
+        'Todo import @g6/* precisa resolver para packages/* ou apps/*; senão as regras acima não conseguem verificá-lo. Rode `npm ci` na raiz antes.',
+      from: {},
+      to: {
+        couldNotResolve: true,
+        path: '^@g6/',
+      },
+    },
   ],
   options: {
     doNotFollow: {
@@ -60,7 +74,9 @@ module.exports = {
     enhancedResolveOptions: {
       exportsFields: ['exports'],
       conditionNames: ['import', 'require', 'node', 'default', 'types'],
-      extensions: ['.ts', '.mts', '.js', '.mjs', '.json'],
+      // Todas as extensões que o parser lê; sem elas, um import sem extensão
+      // para um `.tsx`/`.cts`/... de outro pacote não resolveria e escaparia.
+      extensions: ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs', '.json'],
     },
     // Grafo da Visão de Implementação (`npm run grafo`): um nó por pacote/app.
     reporterOptions: {
