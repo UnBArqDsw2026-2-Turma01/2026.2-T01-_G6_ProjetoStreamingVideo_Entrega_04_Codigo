@@ -1,4 +1,4 @@
-import { pacoteId, usuarioId, type EventBus, type EventoDominio, type Sessao } from "@g6/shared-kernel";
+import { EventBusEmMemoria, pacoteId, usuarioId, type EventoDominio, type Sessao } from "@g6/shared-kernel";
 import { casosRecargaPort } from "@g6/shared-kernel/testing";
 import { RepositorioEmMemoria } from "../../src/comum/compartilhado";
 import { Dinheiro, Usuario } from "../../src/comum/dominio";
@@ -13,13 +13,6 @@ import {
 
 const SEGREDO = "segredo-simulado";
 
-/** Barramento mínimo: o EventBusEmMemoria do #27 ainda não é exportado pelo kernel. */
-function barramento(publicados: EventoDominio[]): EventBus {
-  return {
-    publicar: (evento) => void publicados.push(evento),
-    assinar: () => () => undefined,
-  };
-}
 // Ids fixos exigidos pela suíte de contrato do kernel (casosRecargaPort).
 const pacotes: Pacote[] = [{ id: "pct_valido", quantidadeMoedaVirtual: 210, valorBase: Dinheiro.deReais(10) }];
 
@@ -28,8 +21,9 @@ function montar() {
   usuarios.salvar(new Usuario("usr_1", "Espectador", "um@exemplo.com"));
   usuarios.salvar(new Usuario("usr_2", "Outro", "dois@exemplo.com"));
   const processador = new ProcessadorSimulado();
+  const eventos = new EventBusEmMemoria();
   const publicados: EventoDominio[] = [];
-  const eventos = barramento(publicados);
+  eventos.assinar("RecargaConcluida", (evento) => publicados.push(evento));
   const servico = new RecargaService({
     gateways: { simulado: new AdaptadorProcessadorSimulado(processador, SEGREDO, "Simulado") },
     financeiro: new ServicoFinanceiro(),

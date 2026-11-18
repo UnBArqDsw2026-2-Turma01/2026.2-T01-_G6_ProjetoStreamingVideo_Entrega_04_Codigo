@@ -111,4 +111,3 @@ Para conferir, rode `npm run demo:recarga -w @g6/monetizacao`: as linhas de "Mei
 
 - O aviso que passa pelo Proxy é **gerado por nós**, com assinatura HMAC própria; com processador real, a aprovação é detectada por consulta, como na E03. O webhook real de cada processador ficaria no adaptador dele, sem mudar o Proxy.
 - Os pagamentos já creditados ficam **em memória**; em produção seriam uma tabela com restrição de unicidade.
-- O `EventBusEmMemoria` do kernel ainda não é exportado; os testes e o demo usam um barramento mínimo.

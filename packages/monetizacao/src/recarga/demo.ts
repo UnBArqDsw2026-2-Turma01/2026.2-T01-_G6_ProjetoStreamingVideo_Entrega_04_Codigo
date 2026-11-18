@@ -9,7 +9,7 @@
  */
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { pacoteId, usuarioId, type EventoDominio, type Sessao } from "@g6/shared-kernel";
+import { EventBusEmMemoria, pacoteId, usuarioId, type EventoDominio, type Sessao } from "@g6/shared-kernel";
 import { RepositorioEmMemoria } from "../comum/compartilhado";
 import { Dinheiro, Usuario } from "../comum/dominio";
 import { ServicoFinanceiro } from "../comum/financeiro";
@@ -38,12 +38,14 @@ async function main(): Promise<void> {
   const usuarios = new RepositorioEmMemoria<Usuario>();
   const espectador = new Usuario("usr_espectador", "Espectador", "espectador@exemplo.com");
   usuarios.salvar(espectador);
+  const eventos = new EventBusEmMemoria();
   const publicados: EventoDominio[] = [];
+  eventos.assinar("RecargaConcluida", (evento) => publicados.push(evento));
   const recarga = new RecargaService({
     gateways,
     financeiro: new ServicoFinanceiro(),
     usuarios,
-    eventos: { publicar: (e) => void publicados.push(e), assinar: () => () => undefined },
+    eventos,
   });
   const sessao: Sessao = { usuarioId: usuarioId(espectador.id), papel: "espectador", token: "demo", expiraEm: new Date() };
 
