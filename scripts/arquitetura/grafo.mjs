@@ -4,6 +4,7 @@
 //
 // Uso: npm run grafo --prefix scripts/arquitetura
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,12 +14,20 @@ import { instance } from '@viz-js/viz';
 const aqui = dirname(fileURLToPath(import.meta.url));
 const raiz = join(aqui, '..', '..');
 const saida = join(aqui, 'grafo', 'dependencias.svg');
-const depcruise = join(aqui, 'node_modules', '.bin', 'depcruise');
+// Chama o CLI pelo próprio `node` em vez de `node_modules/.bin/depcruise`,
+// que no Windows é um `.cmd` e não roda via execFile.
+const depcruise = join(aqui, 'node_modules', 'dependency-cruiser', 'bin', 'dependency-cruiser.mjs');
+
+if (!existsSync(depcruise)) {
+  console.error('dependency-cruiser não instalado: rode `npm ci --prefix scripts/arquitetura`.');
+  process.exit(1);
+}
 
 // Só o código de produção: testes e módulos nativos do Node não entram no grafo.
 const { stdout: dot } = await promisify(execFile)(
-  depcruise,
+  process.execPath,
   [
+    depcruise,
     '--config', '.dependency-cruiser.cjs',
     '--output-type', 'dot',
     '--include-only', '^(packages|apps)/',
