@@ -9,7 +9,7 @@
     "./testing": "./src/testing/index.ts"
   },
   "scripts": {
-    "test": "tsx --test 'test/**/*.test.ts'",
+    "test": "tsx --test \"test/**/*.test.ts\"",
     "typecheck": "tsc -p tsconfig.json"
   }
 }
