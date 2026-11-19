@@ -22,7 +22,7 @@ import {
   RecordedVideo,
   type UserContent,
 } from "../src/factory-method";
-import { ConteudoDeLive } from "../src/index";
+import { CONFIGURACAO_PADRAO, type ConfiguracaoDaLive, ConteudoDeLive } from "../src/index";
 
 const criadora: Sessao = {
   usuarioId: usuarioId("criadora"),
@@ -87,26 +87,33 @@ class TransmissaoControlada implements TransmissaoPort {
   }
 }
 
-/** Repositório em memória que lança uma vez ao salvar uma live encerrada. */
+/** Repositório em memória que lança uma vez ao salvar uma live no status escolhido. */
 class RepositorioQueFalhaUmaVez extends InMemoryContentRepository {
-  private falhar = false;
+  private falharEm: LiveStreamStatus | undefined;
 
-  falharNoProximoSaveDeLiveEncerrada(): void {
-    this.falhar = true;
+  falharNoProximoSaveDeLive(status: LiveStreamStatus): void {
+    this.falharEm = status;
   }
 
   override save(content: UserContent): void {
-    if (this.falhar && content instanceof LiveStream && content.status === LiveStreamStatus.ENDED) {
-      this.falhar = false;
+    if (content instanceof LiveStream && content.status === this.falharEm) {
+      this.falharEm = undefined;
       throw new Error("repositório indisponível");
     }
     super.save(content);
+  }
+
+  lives(): LiveStream[] {
+    return [...Array(this.size).keys()]
+      .map((i) => this.findContentById(`conteudo-${i + 1}`))
+      .filter((conteudo) => conteudo instanceof LiveStream);
   }
 }
 
 interface Opcoes {
   readonly bloqueados?: readonly string[];
   readonly repositorio?: InMemoryContentRepository;
+  readonly configuracao?: ConfiguracaoDaLive;
 }
 
 function setup(opcoes: Opcoes = {}) {
@@ -126,6 +133,7 @@ function montar<T extends TransmissaoPort>(transmissao: T, opcoes: Opcoes) {
     transmissao,
     repositorio,
     politica: new BlocklistPolicyService(repositorio, opcoes.bloqueados ?? []),
+    configuracao: opcoes.configuracao,
     novoId: () => `conteudo-${++sequencia}`,
   });
   const cancelar = conteudo.assinar();
@@ -229,7 +237,7 @@ describe("ConteudoDeLive (Client do Factory Method)", () => {
     const repositorio = new RepositorioQueFalhaUmaVez();
     const ctx = setup({ repositorio });
     const live = await abrirLive(ctx);
-    repositorio.falharNoProximoSaveDeLiveEncerrada();
+    repositorio.falharNoProximoSaveDeLive(LiveStreamStatus.ENDED);
 
     await encerrarLive(ctx, live);
     await ctx.conteudo.ocioso();
@@ -242,6 +250,40 @@ describe("ConteudoDeLive (Client do Factory Method)", () => {
 
     expect(await ctx.conteudo.gravacaoDe(live)).toBeInstanceOf(RecordedVideo);
     expect(ctx.conteudo.falhas).toHaveLength(1);
+  });
+
+  it("guarda a live que falhou no último save do início, sem criar outra nem deixá-la no ar", async () => {
+    const repositorio = new RepositorioQueFalhaUmaVez();
+    const ctx = setup({ repositorio });
+    repositorio.falharNoProximoSaveDeLive(LiveStreamStatus.LIVE);
+
+    const live = await abrirLive(ctx);
+    await ctx.conteudo.ocioso();
+    expect((await ctx.conteudo.liveDe(live))?.status).toBe(LiveStreamStatus.LIVE);
+    expect(ctx.conteudo.falhas).toHaveLength(1);
+
+    ctx.eventos.publicar({ tipo: "LiveIniciada", live, canal, em: inicio });
+    await encerrarLive(ctx, live);
+    await ctx.conteudo.ocioso();
+
+    expect(repositorio.lives()).toHaveLength(1);
+    expect(repositorio.lives().filter((stream) => stream.isPublished())).toEqual([]);
+    expect(await ctx.conteudo.gravacaoDe(live)).toBeInstanceOf(RecordedVideo);
+  });
+
+  it("encerra sem VOD e sem falha a live sem gravação automática", async () => {
+    const ctx = setup({
+      configuracao: { ...CONFIGURACAO_PADRAO, recordAutomatically: false },
+    });
+    const live = await abrirLive(ctx);
+
+    await encerrarLive(ctx, live);
+    ctx.eventos.publicar({ tipo: "LiveEncerrada", live, canal, em: fim });
+    await ctx.conteudo.ocioso();
+
+    expect((await ctx.conteudo.liveDe(live))?.status).toBe(LiveStreamStatus.ENDED);
+    expect(await ctx.conteudo.gravacaoDe(live)).toBeUndefined();
+    expect(ctx.conteudo.falhas).toEqual([]);
   });
 
   it("esquece o início que falhou, e um LiveIniciada repetido tenta de novo", async () => {

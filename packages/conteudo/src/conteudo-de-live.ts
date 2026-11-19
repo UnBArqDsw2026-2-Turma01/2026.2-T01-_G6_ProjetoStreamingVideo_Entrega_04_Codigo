@@ -61,8 +61,10 @@ export interface DependenciasConteudoDeLive {
  * (mudança de contrato).
  *
  * Falhas não sobem para o publicador do evento; ficam em `falhas`. Um início que falhou
- * é esquecido, e um `LiveIniciada` repetido tenta de novo. Um encerramento que falhou
- * depois de `finish()` é retomado por um `LiveEncerrada` repetido.
+ * antes de a `LiveStream` existir é esquecido, e um `LiveIniciada` repetido tenta de novo;
+ * se ela já existe, fica guardada para o encerramento. Um encerramento que falhou depois
+ * de `finish()` é retomado por um `LiveEncerrada` repetido. Live sem gravação automática
+ * encerra sem VOD e sem falha.
  *
  * O VOD nasce em `PROCESSING` e fora do ar, como na E03: o evento `RecordingAvailable`
  * (`markReady`) não faz parte do contrato do CA-01.
@@ -153,6 +155,8 @@ export class ConteudoDeLive {
           if (live.status !== LiveStreamStatus.ENDED) return;
           if (this.repositorio.findRecordingByStream(live.id) !== undefined) return;
           this.repositorio.save(live);
+          // Sem gravação automática não há VOD, e isso não é falha (regra F2).
+          if (!live.recordAutomatically) return;
           this.criadorDeGravacao.submit({ streamId: live.id });
         })
         .catch((erro: unknown) => {
@@ -174,11 +178,17 @@ export class ConteudoDeLive {
       channelId: evento.canal,
       config: { ...this.configuracao, title: resumo.valor.titulo },
     });
-    live.markLive(evento.em);
-    if (live.moderationStatus === ModerationResult.APPROVED) {
-      live.publish();
+    try {
+      live.markLive(evento.em);
+      if (live.moderationStatus === ModerationResult.APPROVED) {
+        live.publish();
+      }
+      this.repositorio.save(live);
+    } catch (erro) {
+      // A live já existe no repositório: mantém a origem para o encerramento encontrá-la,
+      // em vez de esquecê-la e deixar um novo início criar outra.
+      this.erros.push(erro);
     }
-    this.repositorio.save(live);
     return live;
   }
 
