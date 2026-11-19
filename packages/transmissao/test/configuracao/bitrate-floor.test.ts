@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { BITRATE_FLOOR_BPS, minimumBitrateBps } from "./bitrate-floor";
-import { Resolution } from "./enums";
+import { BITRATE_FLOOR_BPS, minimumBitrateBps } from "../../src/configuracao/bitrate-floor";
+import { Resolution } from "../../src/configuracao/enums";
 
 describe("minimumBitrateBps (base da regra R5)", () => {
   it("usa a faixa de até 30 fps no limite dos 30 quadros", () => {

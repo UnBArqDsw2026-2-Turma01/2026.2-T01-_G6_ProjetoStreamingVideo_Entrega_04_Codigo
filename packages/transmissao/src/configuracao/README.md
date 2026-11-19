@@ -1,6 +1,6 @@
 # Builder — configuração de transmissão
 
-**Estado:** todos os participantes implementados e testados; `npm run demo:builder` roda a demonstração.
+**Estado:** todos os participantes implementados e testados; `npm run demo:configuracao -w @g6/transmissao` roda a demonstração.
 
 Modelagem e decisão completas no repositório de documentação: [Modelagem — Builder](https://github.com/UnBArqDsw2026-2-Turma01/2026.2-T01-_G6_ProjetoStreamingVideo_Entrega_03/blob/main/docs/Base/Relat%C3%B3rios/1.1.1.SubEquipe_01/1.1.1.1.ModelagemBuilder.md) · [ADR-001](https://github.com/UnBArqDsw2026-2-Turma01/2026.2-T01-_G6_ProjetoStreamingVideo_Entrega_03/blob/main/docs/Base/Relat%C3%B3rios/1.1.1.SubEquipe_01/ADR/ADR-001-builder-stream-config.md).
 
@@ -16,14 +16,14 @@ Modelagem e decisão completas no repositório de documentação: [Modelagem —
 | Director | `StreamConfigDirector` | `stream-config-director.ts` | Heitor |
 | Client | `demo.ts` | `demo.ts` | Heitor |
 
-Apoio: `enums.ts` (vocabulário de domínio), `video-settings.ts` (perfil de vídeo), `bitrate-floor.ts` (tabela da regra R5), `errors.ts` (`InvalidStreamConfigError`), `index.ts` (API pública do padrão).
+Apoio: `enums.ts` (vocabulário de domínio), `video-settings.ts` (perfil de vídeo), `bitrate-floor.ts` (tabela da regra R5), `errors.ts` (`InvalidStreamConfigError`), `presets.ts` (`criarConfiguracao`, ponte com o `PresetTransmissao` do shared-kernel), `index.ts` (API pública do padrão).
 
 ## Como a estrutura dos arquivos foi decidida
 
 - **Um arquivo por participante.** O diagrama de classes é a planta deste pacote; quem lê o modelo acha o arquivo pelo nome da classe.
 - **Tudo dentro da pasta do padrão, nada em um `src/dominio/` compartilhado.** A pasta de cada padrão é o escopo de uma dupla. Um módulo comum criado agora seria editado em paralelo pelas duas duplas. Quando o Factory Method precisar de `ContentVisibility`, a promoção é um refactor de uma linha, feito com as duas duplas de acordo.
 - **`index.ts` como fronteira.** Director e demonstração importam daqui; a organização interna pode mudar sem quebrar quem consome.
-- **Testes ao lado do código** (`*.test.ts`), como pede o `CONTRIBUTING.md`.
+- **Testes em `test/configuracao/`**, como o monorepo organiza os pacotes (na E03 ficavam ao lado do código).
 
 ## Director e presets
 
@@ -63,8 +63,14 @@ No ADR-001, R2 é uma verificação de tempo de execução: `build()` conferiria
 
 ## Executar
 
+No monorepo (a partir da raiz):
+
 ```bash
-npm run check        # format:check → lint → typecheck → test
-npm run coverage     # testes + cobertura
-npm run demo:builder # presets, configuração sob medida e configuração inválida rejeitada
+npm run typecheck -w @g6/transmissao
+npm run test:vitest -w @g6/transmissao      # testes de test/configuracao
+npm run demo:configuracao -w @g6/transmissao # presets, configuração sob medida e configuração inválida rejeitada
 ```
+
+## Integração com o shared-kernel
+
+`criarConfiguracao(pedido: PresetTransmissao)` (`presets.ts`) traduz o pedido do contrato (`'baixa-latencia' | 'alta-qualidade' | 'movel'`) para a receita correspondente do `StreamConfigDirector`. Título vazio lança `InvalidStreamConfigError` (R1); a conversão para `Resultado` é do `TransmissaoPort` (#8).

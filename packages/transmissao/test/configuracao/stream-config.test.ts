@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ContentVisibility, LatencyMode, Resolution } from "./enums";
-import { StreamConfig } from "./stream-config";
+import { ContentVisibility, LatencyMode, Resolution } from "../../src/configuracao/enums";
+import { StreamConfig } from "../../src/configuracao/stream-config";
 
 const camposMinimos = {
   title: "Transmissão de teste",

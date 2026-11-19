@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { InvalidStreamConfigError } from "./errors";
+import { InvalidStreamConfigError } from "../../src/configuracao/errors";
 
 describe("InvalidStreamConfigError", () => {
   it("expõe todas as violações recebidas, não apenas a primeira (D5)", () => {

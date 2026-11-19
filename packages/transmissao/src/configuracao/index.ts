@@ -8,6 +8,7 @@ export { BITRATE_FLOOR_BPS, minimumBitrateBps } from "./bitrate-floor";
 export { DefaultStreamConfigBuilder } from "./default-stream-config-builder";
 export { ContentVisibility, LatencyMode, Resolution } from "./enums";
 export { InvalidStreamConfigError } from "./errors";
+export { criarConfiguracao } from "./presets";
 export { StreamConfig } from "./stream-config";
 export type { StreamConfigBuilder } from "./stream-config-builder";
 export { StreamConfigDirector } from "./stream-config-director";

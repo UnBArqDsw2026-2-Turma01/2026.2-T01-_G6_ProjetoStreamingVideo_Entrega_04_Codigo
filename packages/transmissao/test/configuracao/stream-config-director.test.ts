@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { minimumBitrateBps } from "./bitrate-floor";
-import { DefaultStreamConfigBuilder } from "./default-stream-config-builder";
-import { ContentVisibility, LatencyMode, Resolution } from "./enums";
-import { InvalidStreamConfigError } from "./errors";
-import type { StreamConfig } from "./stream-config";
-import type { StreamConfigBuilder } from "./stream-config-builder";
-import { StreamConfigDirector } from "./stream-config-director";
+import { minimumBitrateBps } from "../../src/configuracao/bitrate-floor";
+import { DefaultStreamConfigBuilder } from "../../src/configuracao/default-stream-config-builder";
+import { ContentVisibility, LatencyMode, Resolution } from "../../src/configuracao/enums";
+import { InvalidStreamConfigError } from "../../src/configuracao/errors";
+import type { StreamConfig } from "../../src/configuracao/stream-config";
+import type { StreamConfigBuilder } from "../../src/configuracao/stream-config-builder";
+import { StreamConfigDirector } from "../../src/configuracao/stream-config-director";
 
 /**
  * Dublê do Builder que só registra a ordem das chamadas e delega ao builder real.

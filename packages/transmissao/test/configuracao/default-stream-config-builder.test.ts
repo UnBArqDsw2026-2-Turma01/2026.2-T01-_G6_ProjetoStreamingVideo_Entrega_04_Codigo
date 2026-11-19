@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { DefaultStreamConfigBuilder } from "./default-stream-config-builder";
-import { ContentVisibility, LatencyMode, Resolution } from "./enums";
-import { InvalidStreamConfigError } from "./errors";
-import type { StreamConfigBuilder } from "./stream-config-builder";
+import { DefaultStreamConfigBuilder } from "../../src/configuracao/default-stream-config-builder";
+import { ContentVisibility, LatencyMode, Resolution } from "../../src/configuracao/enums";
+import { InvalidStreamConfigError } from "../../src/configuracao/errors";
+import type { StreamConfigBuilder } from "../../src/configuracao/stream-config-builder";
 
 /** Captura o erro de `build()` para inspecionar as violações acumuladas. */
 function violacoesDe(builder: StreamConfigBuilder): readonly string[] {

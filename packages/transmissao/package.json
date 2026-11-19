@@ -11,6 +11,7 @@
     "test": "npm run test:vitest && npm run test:node",
     "test:vitest": "vitest run --passWithNoTests",
     "test:node": "tsx --test 'test/canal/**/*.test.ts'",
+    "demo:configuracao": "tsx src/configuracao/demo.ts",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
