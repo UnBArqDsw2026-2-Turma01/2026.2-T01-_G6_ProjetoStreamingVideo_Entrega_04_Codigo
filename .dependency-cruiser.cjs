@@ -6,39 +6,50 @@
  * - O `shared-kernel` não depende de nada do monorepo.
  * - Só `apps/*` compõem módulos reais e ficam livres dessas restrições.
  *
- * Os caminhos usam `(?:^|/)packages/` para valerem também na violação
- * proposital de `scripts/arquitetura/violacao-proposital/`, que reproduz a
- * mesma estrutura de pastas e precisa fazer o comando falhar.
+ * Os caminhos são ancorados na raiz do monorepo ou na da violação proposital
+ * (`scripts/arquitetura/violacao-proposital/`, que reproduz a mesma estrutura
+ * de pastas e precisa fazer o comando falhar). Sem a âncora, uma pasta
+ * aninhada como `conteudo/src/packages/chat/` passaria por `chat`.
+ *
+ * As duas primeiras regras proíbem qualquer destino local resolvido fora do
+ * próprio pacote e do shared-kernel, e não só `packages/` e `apps/`: um módulo
+ * em `scripts/` ou em outra pasta da raiz serviria de ponte entre contextos.
+ * Ficam livres as dependências npm (`node_modules`) e os módulos do Node.
  *
  * @type {import('dependency-cruiser').IConfiguration}
  */
+const raiz = '^(?:scripts/arquitetura/violacao-proposital/)?';
+const npm = '(?:^|/)node_modules/';
+
 module.exports = {
   forbidden: [
     {
       name: 'contexto-so-importa-shared-kernel',
       severity: 'error',
       comment:
-        'Um contexto só pode importar @g6/shared-kernel. A integração entre contextos acontece em apps/* (guia #1, regra 2).',
+        'Um contexto só pode importar o próprio código, @g6/shared-kernel e dependências npm. A integração entre contextos acontece em apps/* (guia #1, regra 2).',
       from: {
-        path: '(?:^|/)packages/([^/]+)/',
-        pathNot: '(?:^|/)packages/shared-kernel/',
+        path: `${raiz}packages/([^/]+)/`,
+        pathNot: `${raiz}packages/shared-kernel/`,
       },
       to: {
-        path: '(?:^|/)(?:packages|apps)/',
-        pathNot: ['(?:^|/)packages/$1/', '(?:^|/)packages/shared-kernel/'],
+        couldNotResolve: false,
+        dependencyTypesNot: ['core'],
+        pathNot: [`${raiz}packages/$1/`, `${raiz}packages/shared-kernel/`, npm],
       },
     },
     {
       name: 'shared-kernel-isolado',
       severity: 'error',
       comment:
-        'O shared-kernel é o contrato comum e não pode depender de nenhum contexto nem app do monorepo.',
+        'O shared-kernel é o contrato comum e não pode depender de nada do monorepo fora dele (contexto, app ou outra pasta).',
       from: {
-        path: '(?:^|/)packages/shared-kernel/',
+        path: `${raiz}packages/shared-kernel/`,
       },
       to: {
-        path: '(?:^|/)(?:packages|apps)/',
-        pathNot: '(?:^|/)packages/shared-kernel/',
+        couldNotResolve: false,
+        dependencyTypesNot: ['core'],
+        pathNot: [`${raiz}packages/shared-kernel/`, npm],
       },
     },
     {

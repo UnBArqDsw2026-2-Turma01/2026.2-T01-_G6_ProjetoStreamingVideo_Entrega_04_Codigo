@@ -23,8 +23,24 @@ if (!existsSync(depcruise)) {
   process.exit(1);
 }
 
+const executar = promisify(execFile);
+const opcoes = { cwd: raiz, maxBuffer: 16 * 1024 * 1024 };
+
+// As regras rodam antes, sobre o conjunto completo, como em `npm run verificar`. O
+// `--include-only` do grafo descarta os `@g6/*` não resolvidos antes de aplicar as
+// regras: sem esta etapa, faltando o `npm ci` na raiz, o SVG sairia sem essas arestas
+// e o comando terminaria com sucesso.
+try {
+  await executar(process.execPath, [depcruise, '--config', '.dependency-cruiser.cjs', 'packages', 'apps'], opcoes);
+} catch (erro) {
+  process.stdout.write(erro.stdout ?? '');
+  process.stderr.write(erro.stderr ?? '');
+  console.error('grafo não gerado: as regras de arquitetura falharam (veja `npm run verificar`).');
+  process.exit(1);
+}
+
 // Só o código de produção: testes e módulos nativos do Node não entram no grafo.
-const { stdout: dot } = await promisify(execFile)(
+const { stdout: dot } = await executar(
   process.execPath,
   [
     depcruise,
@@ -34,7 +50,7 @@ const { stdout: dot } = await promisify(execFile)(
     '--exclude', '(^|/)(test|node_modules|dist)/',
     'packages', 'apps',
   ],
-  { cwd: raiz, maxBuffer: 16 * 1024 * 1024 },
+  opcoes,
 );
 
 const svg = (await instance()).renderString(dot, { format: 'svg', engine: 'dot' });
