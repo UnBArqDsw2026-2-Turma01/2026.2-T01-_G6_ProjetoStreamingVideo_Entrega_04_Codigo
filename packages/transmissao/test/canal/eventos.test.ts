@@ -1,7 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { canalId, liveId, type EventoDe } from '@g6/shared-kernel';
-import { EventBusEmMemoria } from '../../../shared-kernel/src/eventbus/index.js';
+import { EventBusEmMemoria, canalId, liveId, type EventoDe } from '@g6/shared-kernel';
 import {
   StreamChannel,
   AsynchronousConcurrentDispatchStrategy,
@@ -23,7 +22,7 @@ describe('StreamChannel com StreamConfig e EventBus', () => {
       visibility: 'PUBLIC',
       latencyMode: 'LOW',
       recordAutomatically: true,
-      resolution: '1080p',
+      resolution: 'R1080P',
       framesPerSecond: 60,
       bitrateBps: 6_000_000,
     };
@@ -71,7 +70,7 @@ describe('StreamChannel com StreamConfig e EventBus', () => {
 
     const configPronta: StreamConfigCanal = {
       title: 'Preset Alta Qualidade',
-      latencyMode: 'NORMAL',
+      latencyMode: 'STANDARD',
       recordAutomatically: true,
     };
 
