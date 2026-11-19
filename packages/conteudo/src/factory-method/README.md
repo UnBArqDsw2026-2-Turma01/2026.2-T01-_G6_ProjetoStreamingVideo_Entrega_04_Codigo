@@ -1,6 +1,6 @@
 # Factory Method — criação de conteúdo do usuário
 
-**Estado:** todos os participantes implementados e testados; `npm run demo:factory-method` roda a demonstração.
+**Estado:** importado da E03 (`g6-streaming-entrega03-subgrupo01-codigo@be019ec`) e adaptado ao monorepo; todos os participantes testados em `test/factory-method/`. No monorepo, o Client é `ConteudoDeLive` (`../conteudo-de-live.ts`), que cria a live e a gravação a partir dos eventos `LiveIniciada` e `LiveEncerrada`.
 
 Modelagem e decisão completas no repositório de documentação: [Modelagem — Factory Method](https://github.com/UnBArqDsw2026-2-Turma01/2026.2-T01-_G6_ProjetoStreamingVideo_Entrega_03/blob/main/docs/Base/Relat%C3%B3rios/1.1.1.SubEquipe_01/1.1.1.3.ModelagemFactoryMethod.md) · [ADR-002](https://github.com/UnBArqDsw2026-2-Turma01/2026.2-T01-_G6_ProjetoStreamingVideo_Entrega_03/blob/main/docs/Base/Relat%C3%B3rios/1.1.1.SubEquipe_01/ADR/ADR-002-factory-method-user-content.md).
 
@@ -14,13 +14,13 @@ Modelagem e decisão completas no repositório de documentação: [Modelagem —
 | ConcreteProduct | `LiveStream`, `RecordedVideo`, `Clip` | `live-stream.ts`, `recorded-video.ts`, `clip.ts` |
 | Creator | `UserContentCreator<TInput, TContent>` — método-fábrica `createContent` e operação `submit` | `user-content-creator.ts` |
 | ConcreteCreator | `LiveStreamCreator`, `RecordedVideoCreator`, `ClipCreator` | `live-stream-creator.ts`, `recorded-video-creator.ts`, `clip-creator.ts` |
-| Client | função `registrar` da demonstração | `demo.ts` |
+| Client | `ConteudoDeLive` (E04), que reage aos eventos da live; na E03, a função `registrar` da demonstração | `../conteudo-de-live.ts` |
 
-Apoio: `enums.ts` (vocabulário do v3), `errors.ts` (`ContentRuleViolationError`), `ports.ts` (`ContentRepository` e `PolicyService`, decisão DE09), `in-memory.ts` (adaptadores para demo e testes), `index.ts` (API pública do padrão).
+Apoio: `enums.ts` (vocabulário do v3), `errors.ts` (`ContentRuleViolationError`), `ports.ts` (`ContentRepository` e `PolicyService`, decisão DE09), `in-memory.ts` (adaptadores em memória, usados também como padrão por `ConteudoDeLive`), `index.ts` (API pública do padrão).
 
 | ConcreteCreator | Substitui, no diagrama v3 | Entrada | Produto nasce em |
 | --- | --- | --- | --- |
-| `LiveStreamCreator` | `LiveStreamService.createStream(userId, config)` | dono, canal e `StreamConfig` do Builder | `CREATED` (mídia não pronta) |
+| `LiveStreamCreator` | `LiveStreamService.createStream(userId, config)` | dono, canal e `LiveStreamConfig` (os campos do `StreamConfig` que a live registra) | `CREATED` (mídia não pronta) |
 | `RecordedVideoCreator` | `MediaProcessingService.persistRecording(streamId)` | id da transmissão | `PROCESSING` (mídia não pronta) |
 | `ClipCreator` | extração coordenada pelo `ClipService` | `ClipRequestInput` do v3 | pronto para publicar |
 
@@ -59,7 +59,7 @@ A regra 7 do v3 (preservar o dono da origem; `createdByUserId` é quem pediu o c
 
 - **Um arquivo por participante**, como no Builder: quem lê o diagrama de classes acha o arquivo pelo nome da classe.
 - **As regras moram no produto, a busca da origem no criador.** O construtor de `Clip` recebe a gravação e confere F4 e F5 sozinho; o `ClipCreator` só sabe onde encontrar essa gravação. Assim nem um `new Clip` escrito fora do padrão consegue criar um clipe inválido.
-- **`ContentVisibility` e `LatencyMode` importados da API do Builder** (`../builder`), não duplicados: duas enumerações iguais em pastas diferentes seriam tipos incompatíveis para o TypeScript, e a `StreamConfig` do Builder não poderia alimentar a `LiveStream`. A promoção para um módulo compartilhado continua sendo decisão das duas duplas, como registra o README do Builder.
+- **`ContentVisibility` e `LatencyMode` declarados em `enums.ts`.** Na E03 vinham da API do Builder (`../builder`). No monorepo o Builder está em `@g6/transmissao`, que este pacote não importa (regra 2 do guia), e a live chega por evento e `TransmissaoPort`, não como `StreamConfig`; por isso o `LiveStreamCreator` recebe `LiveStreamConfig`, só com os quatro campos que copia.
 - **`newId` e `now` injetáveis no Creator**, com UUID e relógio do sistema como padrão: os testes e a demo fixam ids legíveis sem mexer no padrão.
 
 ## Limites declarados
@@ -74,8 +74,8 @@ A regra 7 do v3 (preservar o dono da origem; `createdByUserId` é quem pediu o c
 ## Executar
 
 ```bash
-npm run check                # format:check → lint → typecheck → test
-npm run coverage             # testes + cobertura
-npm run demo:factory-method  # live → gravação → clipe pelo mesmo submit, e pedidos recusados
-npm run bench -- --scenario factory-method
+npm test -w @g6/conteudo
+npm run typecheck -w @g6/conteudo
 ```
+
+A demonstração (`demo.ts`) e o benchmark da E03 não vieram: a demo dependia do Builder, e o roteiro do CA-01 no terminal é da #15 (`apps/cli-demo`).
