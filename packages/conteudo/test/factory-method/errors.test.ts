@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ContentRuleViolationError } from "./errors";
+import { ContentRuleViolationError } from "../../src/factory-method/errors";
 
 describe("ContentRuleViolationError", () => {
   it("começa a mensagem pelo id da regra, o elo entre o terminal e o ADR-002", () => {

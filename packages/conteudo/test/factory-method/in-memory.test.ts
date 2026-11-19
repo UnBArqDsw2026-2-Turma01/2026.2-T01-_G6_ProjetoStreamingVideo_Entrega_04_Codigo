@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { ContentVisibility, LatencyMode } from "../builder";
-import { ModerationResult } from "./enums";
-import { BlocklistPolicyService, InMemoryContentRepository } from "./in-memory";
-import { LiveStream } from "./live-stream";
-import { RecordedVideo } from "./recorded-video";
+import { ContentVisibility, LatencyMode } from "../../src/factory-method/enums";
+import { ModerationResult } from "../../src/factory-method/enums";
+import { BlocklistPolicyService, InMemoryContentRepository } from "../../src/factory-method/in-memory";
+import { LiveStream } from "../../src/factory-method/live-stream";
+import { RecordedVideo } from "../../src/factory-method/recorded-video";
 
 function newLiveStream(id: string, title = "Live de sábado"): LiveStream {
   return new LiveStream({

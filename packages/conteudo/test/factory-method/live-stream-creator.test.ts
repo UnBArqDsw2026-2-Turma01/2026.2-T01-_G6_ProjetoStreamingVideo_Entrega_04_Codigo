@@ -1,17 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   ContentVisibility,
-  DefaultStreamConfigBuilder,
   LatencyMode,
-  Resolution,
-  StreamConfigDirector,
-} from "../builder";
-import { LiveStreamStatus, ModerationResult } from "./enums";
-import { BlocklistPolicyService, InMemoryContentRepository } from "./in-memory";
-import { LiveStream } from "./live-stream";
-import { LiveStreamCreator } from "./live-stream-creator";
-import type { PolicyService } from "./ports";
-import { UserContentCreator } from "./user-content-creator";
+  LiveStreamStatus,
+  ModerationResult,
+} from "../../src/factory-method/enums";
+import { BlocklistPolicyService, InMemoryContentRepository } from "../../src/factory-method/in-memory";
+import { LiveStream } from "../../src/factory-method/live-stream";
+import { type LiveStreamConfig, LiveStreamCreator } from "../../src/factory-method/live-stream-creator";
+import type { PolicyService } from "../../src/factory-method/ports";
+import { UserContentCreator } from "../../src/factory-method/user-content-creator";
 
 function setup(blockedTerms: readonly string[] = []) {
   const repository = new InMemoryContentRepository();
@@ -20,10 +18,19 @@ function setup(blockedTerms: readonly string[] = []) {
   return { repository, creator };
 }
 
+/**
+ * Configuração que os presets `lowLatency` e `mobile` do `StreamConfigDirector` (E03)
+ * produziam: pública, com gravação e só a latência variando. O Builder está em
+ * `@g6/transmissao`, que este pacote não importa.
+ */
+function preset(title: string, latencyMode: LatencyMode): LiveStreamConfig {
+  return { title, visibility: ContentVisibility.PUBLIC, latencyMode, recordAutomatically: true };
+}
+
 describe("LiveStreamCreator (ConcreteCreator)", () => {
   it("é um UserContentCreator cujo método-fábrica instancia LiveStream", () => {
     const { creator } = setup();
-    const config = new StreamConfigDirector(new DefaultStreamConfigBuilder()).lowLatency("Live");
+    const config = preset("Live", LatencyMode.LOW);
 
     const live = creator.submit({ ownerId: "criadora", channelId: "canal-1", config });
 
@@ -31,15 +38,14 @@ describe("LiveStreamCreator (ConcreteCreator)", () => {
     expect(live).toBeInstanceOf(LiveStream);
   });
 
-  it("copia para a live a configuração montada pelo Builder, sem revalidar", () => {
+  it("copia para a live a configuração recebida, sem revalidar", () => {
     const { creator } = setup();
-    const config = new DefaultStreamConfigBuilder()
-      .withTitle("Aula fechada")
-      .withVisibility(ContentVisibility.UNLISTED)
-      .withLatencyMode(LatencyMode.ULTRA_LOW)
-      .withRecording(false)
-      .withVideo(Resolution.R720P, 30, 4_000_000)
-      .build();
+    const config: LiveStreamConfig = {
+      title: "Aula fechada",
+      visibility: ContentVisibility.UNLISTED,
+      latencyMode: LatencyMode.ULTRA_LOW,
+      recordAutomatically: false,
+    };
 
     const live = creator.submit({ ownerId: "criadora", channelId: "canal-1", config });
 
@@ -54,7 +60,7 @@ describe("LiveStreamCreator (ConcreteCreator)", () => {
 
   it("registra a live em CREATED, aprovada mas ainda não publicada", () => {
     const { creator, repository } = setup();
-    const config = new StreamConfigDirector(new DefaultStreamConfigBuilder()).mobile("Da rua");
+    const config = preset("Da rua", LatencyMode.STANDARD);
 
     const live = creator.submit({ ownerId: "criadora", channelId: "canal-1", config });
 
@@ -82,7 +88,7 @@ describe("LiveStreamCreator (ConcreteCreator)", () => {
       policy,
       newId: () => `live-${++sequence}`,
     });
-    const config = new StreamConfigDirector(new DefaultStreamConfigBuilder()).mobile("Da rua");
+    const config = preset("Da rua", LatencyMode.STANDARD);
     const input = { ownerId: "criadora", channelId: "canal-1", config };
 
     expect(() => creator.submit(input)).toThrow("serviço de moderação");
@@ -96,9 +102,7 @@ describe("LiveStreamCreator (ConcreteCreator)", () => {
 
   it("deixa a live recusada pela moderação registrada e fora do ar", () => {
     const { creator } = setup(["proibido"]);
-    const config = new StreamConfigDirector(new DefaultStreamConfigBuilder()).mobile(
-      "Conteúdo proibido",
-    );
+    const config = preset("Conteúdo proibido", LatencyMode.STANDARD);
 
     const live = creator.submit({ ownerId: "criadora", channelId: "canal-1", config });
 

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { ContentVisibility } from "../builder";
-import { ModerationResult, PublicationStatus } from "./enums";
-import { ContentRuleViolationError } from "./errors";
-import { UserContent, type UserContentFields } from "./user-content";
+import { ContentVisibility } from "../../src/factory-method/enums";
+import { ModerationResult, PublicationStatus } from "../../src/factory-method/enums";
+import { ContentRuleViolationError } from "../../src/factory-method/errors";
+import { UserContent, type UserContentFields } from "../../src/factory-method/user-content";
 
 /** ConcreteProduct mínimo, só para exercitar o contrato comum de `UserContent`. */
 class FakeContent extends UserContent {

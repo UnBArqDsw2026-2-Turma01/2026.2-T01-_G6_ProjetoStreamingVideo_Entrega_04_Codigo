@@ -1,13 +1,27 @@
-import type { StreamConfig } from "../builder";
+import type { ContentVisibility, LatencyMode } from "./enums";
 import { LiveStream } from "./live-stream";
 import { UserContentCreator } from "./user-content-creator";
+
+/**
+ * A parte da configuração da live que o conteúdo registra.
+ *
+ * Na E03 era o `StreamConfig` do Builder. No monorepo o Builder está em `@g6/transmissao`,
+ * que este pacote não importa, então a entrada declara só os quatro campos que o criador
+ * lê; o perfil de vídeo já ficava de fora (ver "O que não é copiado").
+ */
+export interface LiveStreamConfig {
+  readonly title: string;
+  readonly visibility: ContentVisibility;
+  readonly latencyMode: LatencyMode;
+  readonly recordAutomatically: boolean;
+}
 
 /** Entrada de `LiveStreamService.createStream(userId, config)` no diagrama v3, mais o canal. */
 export interface LiveStreamInput {
   readonly ownerId: string;
   readonly channelId: string;
-  /** Configuração já validada pelo Builder (ADR-001). */
-  readonly config: StreamConfig;
+  /** Configuração já validada por quem abriu a live (o Builder, ADR-001). */
+  readonly config: LiveStreamConfig;
 }
 
 /**

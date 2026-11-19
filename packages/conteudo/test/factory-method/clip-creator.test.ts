@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { ContentVisibility, LatencyMode } from "../builder";
-import { Clip } from "./clip";
-import { ClipCreator, type ClipRequestInput } from "./clip-creator";
-import { ModerationResult, PublicationStatus } from "./enums";
-import { BlocklistPolicyService, InMemoryContentRepository } from "./in-memory";
-import { LiveStream } from "./live-stream";
-import { RecordedVideo } from "./recorded-video";
+import { ContentVisibility, LatencyMode } from "../../src/factory-method/enums";
+import { Clip } from "../../src/factory-method/clip";
+import { ClipCreator, type ClipRequestInput } from "../../src/factory-method/clip-creator";
+import { ModerationResult, PublicationStatus } from "../../src/factory-method/enums";
+import { BlocklistPolicyService, InMemoryContentRepository } from "../../src/factory-method/in-memory";
+import { LiveStream } from "../../src/factory-method/live-stream";
+import { RecordedVideo } from "../../src/factory-method/recorded-video";
 
 function setup({ ready = true, withRecording = true, blockedTerms = [] as string[] } = {}) {
   const repository = new InMemoryContentRepository();

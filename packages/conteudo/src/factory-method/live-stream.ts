@@ -1,5 +1,4 @@
-import type { LatencyMode } from "../builder";
-import { LiveStreamStatus } from "./enums";
+import { type LatencyMode, LiveStreamStatus } from "./enums";
 import { UserContent, type UserContentFields } from "./user-content";
 
 /** Campos de uma `LiveStream`, além dos comuns a todo conteúdo. */

@@ -1,5 +1,4 @@
-import type { ContentVisibility } from "../builder";
-import { ModerationResult, PublicationStatus } from "./enums";
+import { type ContentVisibility, ModerationResult, PublicationStatus } from "./enums";
 import { ContentRuleViolationError } from "./errors";
 
 /** Dados comuns a todo conteúdo, recebidos do criador concreto. */

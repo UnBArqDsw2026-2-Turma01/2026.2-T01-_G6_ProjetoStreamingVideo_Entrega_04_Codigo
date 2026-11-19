@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { ContentVisibility } from "../builder";
-import { ModerationResult, PublicationStatus } from "./enums";
-import { ContentRuleViolationError } from "./errors";
-import { InMemoryContentRepository } from "./in-memory";
-import type { ContentRepository, PolicyService } from "./ports";
-import { UserContent } from "./user-content";
-import { UserContentCreator } from "./user-content-creator";
+import { ContentVisibility } from "../../src/factory-method/enums";
+import { ModerationResult, PublicationStatus } from "../../src/factory-method/enums";
+import { ContentRuleViolationError } from "../../src/factory-method/errors";
+import { InMemoryContentRepository } from "../../src/factory-method/in-memory";
+import type { ContentRepository, PolicyService } from "../../src/factory-method/ports";
+import { UserContent } from "../../src/factory-method/user-content";
+import { UserContentCreator } from "../../src/factory-method/user-content-creator";
 
 class FakeContent extends UserContent {
   constructor(

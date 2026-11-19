@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { ContentVisibility, LatencyMode } from "../builder";
-import { LiveStreamStatus, ModerationResult } from "./enums";
-import { LiveStream } from "./live-stream";
-import { UserContent } from "./user-content";
+import { ContentVisibility, LatencyMode } from "../../src/factory-method/enums";
+import { LiveStreamStatus, ModerationResult } from "../../src/factory-method/enums";
+import { LiveStream } from "../../src/factory-method/live-stream";
+import { UserContent } from "../../src/factory-method/user-content";
 
 function newLiveStream(): LiveStream {
   return new LiveStream({

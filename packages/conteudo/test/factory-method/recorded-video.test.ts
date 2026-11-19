@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { ContentVisibility, LatencyMode } from "../builder";
-import { ModerationResult, ProcessingStatus } from "./enums";
-import { ContentRuleViolationError } from "./errors";
-import { LiveStream } from "./live-stream";
-import { RecordedVideo } from "./recorded-video";
+import { ContentVisibility, LatencyMode } from "../../src/factory-method/enums";
+import { ModerationResult, ProcessingStatus } from "../../src/factory-method/enums";
+import { ContentRuleViolationError } from "../../src/factory-method/errors";
+import { LiveStream } from "../../src/factory-method/live-stream";
+import { RecordedVideo } from "../../src/factory-method/recorded-video";
 
 function newLiveStream(recordAutomatically = true, ended = true): LiveStream {
   const live = new LiveStream({

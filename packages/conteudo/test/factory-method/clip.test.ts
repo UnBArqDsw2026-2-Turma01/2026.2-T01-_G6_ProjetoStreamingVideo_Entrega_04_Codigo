@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { ContentVisibility, LatencyMode } from "../builder";
-import { Clip, type ClipFields } from "./clip";
-import { ModerationResult } from "./enums";
-import { LiveStream } from "./live-stream";
-import { RecordedVideo } from "./recorded-video";
+import { ContentVisibility, LatencyMode } from "../../src/factory-method/enums";
+import { Clip, type ClipFields } from "../../src/factory-method/clip";
+import { ModerationResult } from "../../src/factory-method/enums";
+import { LiveStream } from "../../src/factory-method/live-stream";
+import { RecordedVideo } from "../../src/factory-method/recorded-video";
 
 function newRecording(ready = true): RecordedVideo {
   const live = new LiveStream({

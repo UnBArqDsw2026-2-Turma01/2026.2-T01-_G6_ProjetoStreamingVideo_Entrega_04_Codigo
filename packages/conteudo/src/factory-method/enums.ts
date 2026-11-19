@@ -6,12 +6,26 @@
  * do TypeScript pelo mesmo motivo do Builder: cada constante do modelo vira uma constante
  * nomeada no código, e os dois artefatos podem ser conferidos lado a lado.
  *
- * `ContentVisibility` e `LatencyMode` **não** são redeclaradas aqui: já existem na API
- * pública do Builder (`../builder`) e são importadas de lá. Duplicá-las criaria dois tipos
- * incompatíveis para a mesma coisa — um `StreamConfig` com visibilidade do Builder não
- * poderia alimentar uma `LiveStream` com a visibilidade daqui. A promoção para um módulo
- * de domínio compartilhado continua sendo decisão das duas duplas (README do Builder).
+ * `ContentVisibility` e `LatencyMode` vinham da API pública do Builder (`../builder`) na
+ * E03. No monorepo o Builder está em `@g6/transmissao`, que este pacote não pode importar
+ * (regra 2 do guia), então as duas são declaradas aqui, com as mesmas constantes. Não há
+ * mais `StreamConfig` do Builder alimentando a `LiveStream` diretamente: a live chega por
+ * evento e `TransmissaoPort`, e quem a converte é `ConteudoDeLive`.
  */
+
+/** Modo de latência da transmissão ao vivo (diagrama v3 da Entrega 02). */
+export enum LatencyMode {
+  STANDARD = "STANDARD",
+  LOW = "LOW",
+  ULTRA_LOW = "ULTRA_LOW",
+}
+
+/** Visibilidade do conteúdo publicado (diagrama v3 da Entrega 02). */
+export enum ContentVisibility {
+  PUBLIC = "PUBLIC",
+  UNLISTED = "UNLISTED",
+  PRIVATE = "PRIVATE",
+}
 
 /** Situação de publicação de um `UserContent` (diagrama v3). */
 export enum PublicationStatus {

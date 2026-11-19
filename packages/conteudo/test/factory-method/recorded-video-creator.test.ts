@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { ContentVisibility, LatencyMode } from "../builder";
-import { ModerationResult, ProcessingStatus } from "./enums";
-import { ContentRuleViolationError } from "./errors";
-import { BlocklistPolicyService, InMemoryContentRepository } from "./in-memory";
-import { LiveStream } from "./live-stream";
-import type { PolicyService } from "./ports";
-import { RecordedVideo } from "./recorded-video";
-import { RecordedVideoCreator } from "./recorded-video-creator";
+import { ContentVisibility, LatencyMode } from "../../src/factory-method/enums";
+import { ModerationResult, ProcessingStatus } from "../../src/factory-method/enums";
+import { ContentRuleViolationError } from "../../src/factory-method/errors";
+import { BlocklistPolicyService, InMemoryContentRepository } from "../../src/factory-method/in-memory";
+import { LiveStream } from "../../src/factory-method/live-stream";
+import type { PolicyService } from "../../src/factory-method/ports";
+import { RecordedVideo } from "../../src/factory-method/recorded-video";
+import { RecordedVideoCreator } from "../../src/factory-method/recorded-video-creator";
 
 function setup() {
   const repository = new InMemoryContentRepository();
