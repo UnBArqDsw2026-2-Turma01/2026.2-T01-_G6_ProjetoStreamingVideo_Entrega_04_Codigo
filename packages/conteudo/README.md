@@ -28,8 +28,9 @@ const vod = await conteudo.gravacaoDe(live); // RecordedVideo em PROCESSING
 ## Decisões e limites
 
 - **Por que `LiveIniciada` também.** O `RecordedVideoCreator` só cria a gravação a partir de uma `LiveStream` encerrada que já está no repositório (regra F2), e `LiveEncerrada` traz só `live`, `canal` e `em`. A live é registrada no início, quando `consultar` ainda a encontra (depois do encerramento, devolve erro).
-- **Ordem assíncrona.** O `EventBus` é síncrono e `consultar` é assíncrono; o encerramento espera a tarefa do início, então um `LiveEncerrada` que chega antes de a consulta terminar não se perde. `ocioso()` espera as reações em andamento.
-- **Falhas** (consulta recusada, regra violada) não sobem para quem publicou o evento: ficam em `falhas`.
+- **Ordem assíncrona.** O `EventBus` é síncrono e `consultar` é assíncrono; o encerramento espera a tarefa do início, então um `LiveEncerrada` que chega com a consulta pendente é tratado depois dela. `ocioso()` espera as reações em andamento.
+- **Limite declarado.** Isso só funciona se `consultar` ler a live no momento da chamada (como o `FakeTransmissao`). Se a implementação ler depois de um `await` e a live for encerrada nesse intervalo, `consultar` devolve erro e não há VOD. Fechar essa janela exige `criador` e `titulo` no próprio `LiveIniciada`, uma mudança de contrato (label `contrato`).
+- **Falhas** (consulta recusada, regra violada, repositório indisponível) não sobem para quem publicou o evento: ficam em `falhas`. Um início que falhou é esquecido, e um `LiveIniciada` repetido tenta de novo. Um encerramento que falhou depois de `finish()` (live `ENDED` sem gravação) é retomado por um `LiveEncerrada` repetido; com a gravação já criada, a repetição não faz nada.
 - **Campos fora do contrato.** `LiveResumo` não traz visibilidade, latência nem gravação; vale `CONFIGURACAO_PADRAO` (pública, latência padrão, gravação ligada), substituível por `configuracao`.
 - **Moderação.** O `PolicyService` da E03 modera conteúdo por id e não corresponde ao `ModeracaoPort` (que avalia mensagens de chat). O padrão é o `BlocklistPolicyService` da E03 sem termos bloqueados; a composição pode injetar outro em `politica`.
 - **VOD em processamento.** O VOD nasce em `PROCESSING` e fora do ar, como na E03: `RecordingAvailable` (`markReady`) não faz parte do contrato do CA-01.

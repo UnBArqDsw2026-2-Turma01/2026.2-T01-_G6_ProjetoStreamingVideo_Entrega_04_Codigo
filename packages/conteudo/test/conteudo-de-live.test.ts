@@ -1,4 +1,14 @@
-import { canalId, EventBusEmMemoria, liveId, type Sessao, usuarioId } from "@g6/shared-kernel";
+import {
+  canalId,
+  EventBusEmMemoria,
+  type LiveId,
+  type LiveResumo,
+  liveId,
+  type Resultado,
+  type Sessao,
+  type TransmissaoPort,
+  usuarioId,
+} from "@g6/shared-kernel";
 import { FakeTransmissao } from "@g6/shared-kernel/testing";
 import { describe, expect, it } from "vitest";
 import {
@@ -10,6 +20,7 @@ import {
   ProcessingStatus,
   PublicationStatus,
   RecordedVideo,
+  type UserContent,
 } from "../src/factory-method";
 import { ConteudoDeLive } from "../src/index";
 
@@ -23,10 +34,92 @@ const canal = canalId("canal-da-criadora");
 const inicio = new Date("2026-11-19T20:00:00Z");
 const fim = new Date("2026-11-19T21:00:00Z");
 
-function setup(opcoes: { bloqueados?: readonly string[] } = {}) {
+/** `TransmissaoPort` com a consulta controlada pelo teste: pode atrasar a leitura ou falhar. */
+class TransmissaoControlada implements TransmissaoPort {
+  private readonly resumos = new Map<LiveId, LiveResumo>();
+  private portao: Promise<void> | undefined;
+  private abrirPortao = () => {};
+  private falhar = false;
+
+  abrirLive(titulo: string): LiveId {
+    const live = liveId(`live-${this.resumos.size + 1}`);
+    this.resumos.set(live, { live, canal, criador: criadora.usuarioId, titulo, iniciadaEm: inicio });
+    return live;
+  }
+
+  encerrarLive(live: LiveId): void {
+    this.resumos.delete(live);
+  }
+
+  /** As próximas consultas só leem a live depois de `liberarLeitura()`. */
+  adiarLeitura(): void {
+    this.portao = new Promise((liberar) => {
+      this.abrirPortao = liberar;
+    });
+  }
+
+  liberarLeitura(): void {
+    this.abrirPortao();
+  }
+
+  falharProximaConsulta(): void {
+    this.falhar = true;
+  }
+
+  async abrir(): Promise<Resultado<LiveResumo>> {
+    throw new Error("não usado: o teste abre a live com abrirLive()");
+  }
+
+  async encerrar(): Promise<Resultado<void>> {
+    throw new Error("não usado: o teste encerra a live com encerrarLive()");
+  }
+
+  async consultar(live: LiveId): Promise<Resultado<LiveResumo>> {
+    if (this.portao) await this.portao;
+    if (this.falhar) {
+      this.falhar = false;
+      return { ok: false, erro: { codigo: "INDISPONIVEL", mensagem: "transmissão indisponível" } };
+    }
+    const resumo = this.resumos.get(live);
+    return resumo
+      ? { ok: true, valor: resumo }
+      : { ok: false, erro: { codigo: "NAO_ENCONTRADA", mensagem: "Live inexistente ou encerrada" } };
+  }
+}
+
+/** Repositório em memória que lança uma vez ao salvar uma live encerrada. */
+class RepositorioQueFalhaUmaVez extends InMemoryContentRepository {
+  private falhar = false;
+
+  falharNoProximoSaveDeLiveEncerrada(): void {
+    this.falhar = true;
+  }
+
+  override save(content: UserContent): void {
+    if (this.falhar && content instanceof LiveStream && content.status === LiveStreamStatus.ENDED) {
+      this.falhar = false;
+      throw new Error("repositório indisponível");
+    }
+    super.save(content);
+  }
+}
+
+interface Opcoes {
+  readonly bloqueados?: readonly string[];
+  readonly repositorio?: InMemoryContentRepository;
+}
+
+function setup(opcoes: Opcoes = {}) {
+  return montar(new FakeTransmissao(), opcoes);
+}
+
+function setupCom(transmissao: TransmissaoControlada) {
+  return montar(transmissao, {});
+}
+
+function montar<T extends TransmissaoPort>(transmissao: T, opcoes: Opcoes) {
   const eventos = new EventBusEmMemoria();
-  const transmissao = new FakeTransmissao();
-  const repositorio = new InMemoryContentRepository();
+  const repositorio = opcoes.repositorio ?? new InMemoryContentRepository();
   let sequencia = 0;
   const conteudo = new ConteudoDeLive({
     eventos,
@@ -99,18 +192,73 @@ describe("ConteudoDeLive (Client do Factory Method)", () => {
     expect((await ctx.conteudo.gravacaoDe(live))?.sourceStreamId).toBe(stream?.id);
   });
 
-  it("LiveEncerrada publicado antes de a consulta do início terminar não se perde", async () => {
+  it("LiveEncerrada que chega com a consulta do início pendente espera por ela", async () => {
     const ctx = setup();
     const aberta = await ctx.transmissao.abrir(criadora, { preset: "movel", titulo: "Rápida" });
     if (!aberta.ok) throw new Error(aberta.erro.mensagem);
     const { live } = aberta.valor;
 
-    // Os dois eventos no mesmo tique: a consulta de LiveIniciada ainda está pendente.
+    // Tudo no mesmo tique: a consulta de LiveIniciada ainda não resolveu quando a live é
+    // encerrada no fake e LiveEncerrada chega. O fake lê a live no momento da chamada.
     ctx.eventos.publicar({ tipo: "LiveIniciada", live, canal, em: inicio });
+    void ctx.transmissao.encerrar(criadora, live);
+    ctx.eventos.publicar({ tipo: "LiveEncerrada", live, canal, em: fim });
+    await ctx.conteudo.ocioso();
+
+    expect(ctx.transmissao.livesAbertas.has(live)).toBe(false);
+    expect(await ctx.conteudo.gravacaoDe(live)).toBeInstanceOf(RecordedVideo);
+  });
+
+  it("limite declarado: sem VOD se consultar lê depois de um await e a live encerra antes", async () => {
+    const transmissao = new TransmissaoControlada();
+    const ctx = setupCom(transmissao);
+    const live = transmissao.abrirLive("Encerrada às pressas");
+    transmissao.adiarLeitura();
+
+    ctx.eventos.publicar({ tipo: "LiveIniciada", live, canal, em: inicio });
+    transmissao.encerrarLive(live);
+    ctx.eventos.publicar({ tipo: "LiveEncerrada", live, canal, em: fim });
+    transmissao.liberarLeitura();
+    await ctx.conteudo.ocioso();
+
+    expect(await ctx.conteudo.gravacaoDe(live)).toBeUndefined();
+    expect(String(ctx.conteudo.falhas[0])).toMatch(/NAO_ENCONTRADA/);
+  });
+
+  it("retoma o encerramento que falhou depois de finish() num LiveEncerrada repetido", async () => {
+    const repositorio = new RepositorioQueFalhaUmaVez();
+    const ctx = setup({ repositorio });
+    const live = await abrirLive(ctx);
+    repositorio.falharNoProximoSaveDeLiveEncerrada();
+
+    await encerrarLive(ctx, live);
+    await ctx.conteudo.ocioso();
+    expect((await ctx.conteudo.liveDe(live))?.status).toBe(LiveStreamStatus.ENDED);
+    expect(await ctx.conteudo.gravacaoDe(live)).toBeUndefined();
+    expect(ctx.conteudo.falhas).toHaveLength(1);
+
     ctx.eventos.publicar({ tipo: "LiveEncerrada", live, canal, em: fim });
     await ctx.conteudo.ocioso();
 
     expect(await ctx.conteudo.gravacaoDe(live)).toBeInstanceOf(RecordedVideo);
+    expect(ctx.conteudo.falhas).toHaveLength(1);
+  });
+
+  it("esquece o início que falhou, e um LiveIniciada repetido tenta de novo", async () => {
+    const transmissao = new TransmissaoControlada();
+    const ctx = setupCom(transmissao);
+    const live = transmissao.abrirLive("Segunda tentativa");
+    transmissao.falharProximaConsulta();
+
+    ctx.eventos.publicar({ tipo: "LiveIniciada", live, canal, em: inicio });
+    await ctx.conteudo.ocioso();
+    expect(await ctx.conteudo.liveDe(live)).toBeUndefined();
+
+    ctx.eventos.publicar({ tipo: "LiveIniciada", live, canal, em: inicio });
+    await ctx.conteudo.ocioso();
+
+    expect((await ctx.conteudo.liveDe(live))?.title).toBe("Segunda tentativa");
+    expect(ctx.conteudo.falhas).toHaveLength(1);
   });
 
   it("LiveEncerrada repetido não cria uma segunda gravação", async () => {

@@ -54,8 +54,15 @@ export interface DependenciasConteudoDeLive {
  * consulta é feita nesse momento: depois do encerramento, `consultar` devolve erro.
  *
  * O `EventBus` entrega de forma síncrona e `consultar` é assíncrono, então o encerramento
- * espera a mesma tarefa do início: um `LiveEncerrada` que chega antes de a consulta
- * terminar não se perde. Falhas não sobem para o publicador do evento; ficam em `falhas`.
+ * espera a mesma tarefa do início. Isso cobre um `LiveEncerrada` que chega com a consulta
+ * pendente, desde que `consultar` leia a live no momento da chamada. Se a implementação só
+ * ler depois de um `await` e a live for encerrada nesse intervalo, `consultar` devolve erro
+ * e não há VOD: fechar essa janela exige o dono e o título no próprio `LiveIniciada`
+ * (mudança de contrato).
+ *
+ * Falhas não sobem para o publicador do evento; ficam em `falhas`. Um início que falhou
+ * é esquecido, e um `LiveIniciada` repetido tenta de novo. Um encerramento que falhou
+ * depois de `finish()` é retomado por um `LiveEncerrada` repetido.
  *
  * O VOD nasce em `PROCESSING` e fora do ar, como na E03: o evento `RecordingAvailable`
  * (`markReady`) não faz parte do contrato do CA-01.
@@ -124,6 +131,8 @@ export class ConteudoDeLive {
 
     const tarefa = this.registrarLive(evento).catch((erro: unknown) => {
       this.erros.push(erro);
+      // Sem origem não há o que encerrar: esquece a live para um novo início tentar de novo.
+      if (this.lives.get(evento.live) === tarefa) this.lives.delete(evento.live);
       return undefined;
     });
     this.lives.set(evento.live, tarefa);
@@ -138,8 +147,11 @@ export class ConteudoDeLive {
     this.acompanhar(
       inicio
         .then((live) => {
-          if (live === undefined || live.status !== LiveStreamStatus.LIVE) return;
-          live.finish(evento.em);
+          if (live === undefined) return;
+          if (live.status === LiveStreamStatus.LIVE) live.finish(evento.em);
+          // `ENDED` sem gravação é um encerramento que falhou no meio: retoma daqui.
+          if (live.status !== LiveStreamStatus.ENDED) return;
+          if (this.repositorio.findRecordingByStream(live.id) !== undefined) return;
           this.repositorio.save(live);
           this.criadorDeGravacao.submit({ streamId: live.id });
         })
