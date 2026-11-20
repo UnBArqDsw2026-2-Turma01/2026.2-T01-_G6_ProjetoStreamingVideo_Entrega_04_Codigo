@@ -52,21 +52,41 @@ $('#form-live').addEventListener('submit', (e) => {
 });
 
 $('#encerrar').addEventListener('click', () =>
-  tentar(async () => { await api('POST', `/api/lives/${estado.live.live}/encerrar`); await atualizar(); }, 'Live encerrada: o VOD foi criado'));
+  tentar(async () => { await api('POST', `/api/lives/${estado.live.live}/encerrar`); await atualizar(); }, 'Live encerrada: a gravação está em Transmissões anteriores'));
 
 // ---- recarga ----
 const ESTRELA = '<svg class="estrela" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.5 5.1 5.6.8-4.05 3.95.95 5.6L12 16.4l-5 2.65.95-5.6L3.9 9.5l5.6-.8z"/></svg>';
 // 2400 → "2,4K"; o valor cheio aparece ao passar o mouse no cartão.
 const compacto = (n) => (n < 1000 ? n.toLocaleString('pt-BR') : `${(n / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}K`);
+
+// Quantidade que se transforma da forma compacta na cheia ao passar o mouse (2,4K → 2.400):
+// a vírgula vira ponto, os dígitos que faltam entram um a um e o "K" sai.
+function quantidadeAnimada(n) {
+  const cheia = n.toLocaleString('pt-BR');
+  if (n < 1000) return `<span class="num">${cheia}</span>`;
+  const [inteiro, resto] = cheia.split('.');
+  const decimais = compacto(n).slice(inteiro.length + 1, -1);
+  // Formas que não se alinham (ex.: arredondamento) trocam sem a transformação.
+  if (cheia.split('.').length !== 2 || !resto.startsWith(decimais)) return `<span class="num">${compacto(n)}</span>`;
+  const digitos = [...resto].map((d, i) => `<span class="dig${i < decimais.length ? '' : ' entra'}" style="--i:${i - decimais.length}">${d}</span>`).join('');
+  return `<span class="num">${inteiro}<span class="sep${decimais ? ' com-virgula' : ''}"><span class="virgula">,</span><span class="ponto">.</span></span>${digitos}<span class="k">K</span></span>`;
+}
 const reais = (c) => (c / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const imposto = (o) => /imposto de (\d+(?:[.,]\d+)?)%/.exec(o.composicao)?.[1];
 
 async function carregarOfertas() {
-  if (estado.papel !== 'espectador') return;
+  if (!estado.token) return; // qualquer conta logada recarrega (o criador também doa em outras lives)
   const [saldo, ofertas] = await Promise.all([api('GET', '/api/saldo'), api('GET', '/api/recarga/ofertas')]);
   $('#saldo').textContent = saldo.moeda.toLocaleString('pt-BR');
   $('#saldo-doacao').textContent = saldo.moeda.toLocaleString('pt-BR');
   const caixa = $('#ofertas');
+  // Só redesenha quando as ofertas mudam: redesenhar a cada atualização cortaria as animações de hover.
+  const chave = JSON.stringify(ofertas);
+  if (caixa.dataset.chave === chave) {
+    caixa.querySelectorAll('.pacote').forEach((p, i) => p.classList.toggle('selecionado', estado.checkout?.pacote === ofertas[i].pacote));
+    return;
+  }
+  caixa.dataset.chave = chave;
   caixa.className = 'pacotes';
   caixa.replaceChildren(...ofertas.map((o) => {
     const botao = document.createElement('button');
@@ -76,7 +96,7 @@ async function carregarOfertas() {
     const taxa = imposto(o);
     botao.innerHTML = `
       ${o.descontoPercentual ? `<span class="faixa-off">${o.descontoPercentual}% OFF</span>` : ''}
-      <strong class="qtd" aria-label="${o.moeda.toLocaleString('pt-BR')} moedas"><span class="curta">${compacto(o.moeda)}</span><span class="cheia">${o.moeda.toLocaleString('pt-BR')}</span> ${ESTRELA}</strong>
+      <strong class="qtd" aria-label="${o.moeda.toLocaleString('pt-BR')} moedas">${quantidadeAnimada(o.moeda)} ${ESTRELA}</strong>
       ${o.descontoPercentual ? `<span class="antigo"><s>${reais(o.precoSemDescontoCentavos)}</s> <span class="off-inline">${o.descontoPercentual}% OFF</span></span>` : ''}
       <span class="preco"><span>R$</span> ${(o.precoCentavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
       ${taxa ? `<small>(Imposto de ${taxa}% incluso)</small>` : ''}`;
@@ -110,13 +130,18 @@ const faixaDe = (valor) => faixas.filter((f) => valor >= f.minimo).at(-1);
 const duracao = (min) => (min >= 60 ? `${min / 60} ${min === 60 ? 'hora' : 'horas'}` : `${min} minutos`);
 const nomeDoPapel = (papel) => (papel === 'criador' ? 'Criador' : papel === 'moderador' ? 'Moderador' : 'Espectador');
 
+// Matiz do avatar a partir do nome (hash FNV-1a): nomes parecidos caem em cores bem diferentes.
+function matizDoNome(nome) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < nome.length; i++) h = Math.imul(h ^ nome.charCodeAt(i), 0x01000193);
+  return (h >>> 0) % 360;
+}
+
 function avatar(nome) {
   const el = document.createElement('span');
   el.className = 'avatar';
   el.textContent = nome[0]?.toUpperCase() ?? '?';
-  let h = 0;
-  for (const c of nome) h = (h * 31 + c.charCodeAt(0)) % 360;
-  el.style.background = `hsl(${h} 45% 45%)`;
+  el.style.background = `hsl(${matizDoNome(nome)} 45% 45%)`;
   return el;
 }
 
@@ -320,7 +345,7 @@ async function atualizar() {
     item.className = 'vod';
     const capa = document.createElement('div');
     capa.className = 'capa';
-    capa.textContent = 'VOD';
+    capa.textContent = 'Gravação';
     const titulo = document.createElement('strong');
     titulo.textContent = v.titulo;
     const hora = document.createElement('small');
