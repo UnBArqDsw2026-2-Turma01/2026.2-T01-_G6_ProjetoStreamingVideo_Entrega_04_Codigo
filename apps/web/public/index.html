@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CA-01 · Live com doação destacada</title>
+  <link rel="stylesheet" href="/estilo.css">
+</head>
+<body>
+  <header>
+    <h1>CA-01 · Live com doação destacada</h1>
+    <div class="sessao">
+      <span id="quem">Sem sessão</span>
+      <button data-papel="criador">Entrar como criador</button>
+      <button data-papel="espectador">Entrar como espectador</button>
+    </div>
+  </header>
+  <p id="aviso" role="status"></p>
+
+  <main>
+    <section id="painel-live">
+      <h2>1 · Live <small>(criador)</small></h2>
+      <form id="form-live">
+        <input name="titulo" placeholder="Título da live" required>
+        <select name="preset">
+          <option value="baixa-latencia">Baixa latência</option>
+          <option value="alta-qualidade">Alta qualidade</option>
+          <option value="movel">Móvel</option>
+        </select>
+        <button>Abrir live</button>
+      </form>
+      <div id="live-atual" class="vazio">Nenhuma live no ar.</div>
+      <button id="encerrar" hidden>Encerrar live</button>
+    </section>
+
+    <section id="painel-recarga">
+      <h2>2 · Recarga <small>(espectador)</small></h2>
+      <p>Saldo: <strong id="saldo">0</strong> moedas</p>
+      <div id="ofertas" class="vazio">Entre como espectador para ver os pacotes.</div>
+      <div id="checkout" hidden>
+        <p id="checkout-texto"></p>
+        <button id="confirmar">Confirmar pagamento simulado</button>
+      </div>
+    </section>
+
+    <section id="painel-doacao">
+      <h2>3 · Doação com mensagem</h2>
+      <form id="form-doacao">
+        <input name="valor" type="number" min="1" step="1" placeholder="Moedas (destaque a partir de 200)" required>
+        <input name="mensagem" placeholder="Mensagem destacada (opcional)">
+        <button>Doar</button>
+      </form>
+      <ul class="faixas">
+        <li><i class="cor AZUL"></i>200 · azul · até 50 caracteres</li>
+        <li><i class="cor VERDE"></i>500 · verde · fixada 2 min</li>
+        <li><i class="cor LARANJA"></i>2000 · laranja · fixada 10 min</li>
+        <li><i class="cor ROSA"></i>5000 · rosa · fixada 30 min</li>
+        <li><i class="cor VERMELHO"></i>50000 · vermelho · fixada 5 h</li>
+      </ul>
+    </section>
+
+    <section id="painel-chat">
+      <h2>4 · Chat</h2>
+      <div id="fixadas"></div>
+      <ol id="mensagens" aria-live="polite"></ol>
+      <form id="form-chat">
+        <input name="texto" placeholder="Escreva uma mensagem" autocomplete="off" required>
+        <button>Enviar</button>
+      </form>
+    </section>
+
+    <section id="painel-vod">
+      <h2>5 · VOD</h2>
+      <ul id="vods" class="vazio"><li>Nenhuma live encerrada ainda.</li></ul>
+    </section>
+  </main>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
