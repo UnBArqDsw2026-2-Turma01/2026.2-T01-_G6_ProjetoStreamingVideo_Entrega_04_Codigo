@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/servidor.ts",
-    "test": "tsx --test 'test/**/*.test.ts'",
+    "test": "tsx --test \"test/**/*.test.ts\"",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
