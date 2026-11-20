@@ -6,6 +6,7 @@
 // Nada fora deste arquivo conhece as implementações: as rotas só falam com `ServicoCA01`.
 import {
   EventBusEmMemoria,
+  pacoteId,
   usuarioId,
   type AutenticacaoPort,
   type CanalId,
@@ -14,6 +15,7 @@ import {
   type ComprovanteDoacao,
   type DoacaoPort,
   type ErroDominio,
+  type ErroRecarga,
   type EventBus,
   type LiveId,
   type LiveResumo,
@@ -80,6 +82,53 @@ function montarDestaque(valor: MoedaVirtual, texto: string, base: MensagemChat):
   return { ok: true, valor: { ...base, valor, cor: faixa.cor, tempoFixacaoMin: faixa.fixacaoMin } };
 }
 
+// PROVISÓRIO: espelha o catálogo do RecargaService real (#10: PACOTES e CONFIGURACAO_PRECO, com 5% de
+// imposto). O pacote só exporta `RecargaService`, que ainda não dá para instanciar fora dele: quando houver
+// uma fábrica exportada no index de `@g6/monetizacao`, apague esta tabela e a classe `RecargaDemo`.
+const CATALOGO = [
+  { reais: 5, bonus: 0, desconto: 5 },
+  { reais: 10, bonus: 5, desconto: 8 },
+  { reais: 30, bonus: 10, desconto: 12 },
+  { reais: 50, bonus: 15, desconto: 16 },
+  { reais: 100, bonus: 20, desconto: 20 },
+  { reais: 300, bonus: 25, desconto: 25 },
+  { reais: 500, bonus: 30, desconto: 29 },
+  { reais: 1000, bonus: 40, desconto: 33 },
+];
+const IMPOSTO = 5;
+
+const OFERTAS: OfertaRecarga[] = CATALOGO.map(({ reais, bonus, desconto }) => ({
+  pacote: pacoteId(`p${reais}`),
+  moeda: Math.round(reais * 20 * (1 + bonus / 100)),
+  precoSemDescontoCentavos: Math.round(reais * 100 * (1 + IMPOSTO / 100)),
+  precoCentavos: Math.round(reais * 100 * (1 - desconto / 100) * (1 + IMPOSTO / 100)),
+  descontoPercentual: desconto,
+  composicao: `pacote de R$ ${reais},00 → desconto de ${desconto}% → imposto de ${IMPOSTO}%`,
+}));
+
+class RecargaDemo extends FakeRecarga {
+  constructor() {
+    super();
+    this.ofertasDisponiveis = OFERTAS;
+  }
+
+  override async recarregar(sessao: Sessao, pacote: PacoteId, meio: MeioPagamento): Promise<Resultado<CheckoutPendente, ErroRecarga>> {
+    const oferta = OFERTAS.find((o) => o.pacote === pacote);
+    if (!oferta) return { ok: false, erro: { codigo: 'PACOTE_INVALIDO', mensagem: 'Pacote inexistente' } };
+    const recargaId = `rec_${Math.random().toString(36).slice(2, 9)}`;
+    const checkout: CheckoutPendente = {
+      recargaId,
+      pacote,
+      meio,
+      valorCobradoCentavos: oferta.precoCentavos,
+      moedaACreditar: oferta.moeda,
+      instrucoes: meio === 'simulado' ? 'Confirmar pagamento simulado' : `https://checkout.fake/${recargaId}`,
+    };
+    this.recargas.set(recargaId, { usuarioId: sessao.usuarioId, situacao: { situacao: 'pendente', checkout } });
+    return { ok: true, valor: checkout };
+  }
+}
+
 export class ServicoCA01 {
   private readonly lives = new Map<string, LiveResumo>();
   private readonly saldos = new Map<string, number>();
@@ -100,6 +149,11 @@ export class ServicoCA01 {
       this.lives.delete(e.live);
       this.vods.push({ live: live.live, titulo: live.titulo, criador: live.criador, iniciadaEm: live.iniciadaEm, encerradaEm: e.em });
     });
+  }
+
+  /** Faixas da mensagem destacada, da menor para a maior, para a tela montar o seletor de valor. */
+  faixas() {
+    return [...FAIXAS].reverse().map((f) => ({ minimo: f.minimo, cor: f.cor, fixacaoMin: f.fixacaoMin, limite: f.limite }));
   }
 
   // ---- sessão (provisório até o login da #17) ----
@@ -220,7 +274,7 @@ export class ServicoCA01 {
 /** Composition root: instancia o EventBus e as implementações e injeta os ports. */
 export function compor(): ServicoCA01 {
   const bus = new EventBusEmMemoria();
-  const recarga = new FakeRecarga();
+  const recarga = new RecargaDemo();
   const portas: Portas = {
     autenticacao: new FakeAutenticacao(),
     transmissao: new FakeTransmissao(),

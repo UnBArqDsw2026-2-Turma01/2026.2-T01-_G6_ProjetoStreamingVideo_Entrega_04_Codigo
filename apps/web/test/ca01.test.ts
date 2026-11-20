@@ -102,3 +102,29 @@ test('rotas protegidas exigem sessão e só criador abre live', async () => {
     servidor.close();
   }
 });
+
+test('recarga oferece o catálogo com desconto e imposto; faixas vêm da API', async () => {
+  const { servidor, chamar, entrar } = await iniciar();
+  try {
+    const espectador = await entrar('espectador');
+    const ofertas = (await chamar('GET', '/api/recarga/ofertas', espectador)).corpo;
+    assert.equal(ofertas.length, 8);
+    assert.deepEqual(ofertas.slice(0, 2).map((o: { moeda: number; precoCentavos: number; descontoPercentual: number }) => [o.moeda, o.precoCentavos, o.descontoPercentual]), [
+      [100, 499, 5],
+      [210, 966, 8],
+    ]);
+    assert.ok(ofertas.every((o: { composicao: string }) => /imposto de 5%/.test(o.composicao)));
+
+    const maior = ofertas.at(-1);
+    const checkout = await chamar('POST', '/api/recarga', espectador, { pacote: maior.pacote, meio: 'simulado' });
+    assert.equal(checkout.corpo.moedaACreditar, 28000);
+    assert.equal(checkout.corpo.valorCobradoCentavos, maior.precoCentavos);
+
+    const faixas = (await chamar('GET', '/api/faixas')).corpo;
+    assert.deepEqual(faixas.map((f: { minimo: number }) => f.minimo), [200, 500, 2000, 5000, 50000]);
+    assert.deepEqual(faixas[1], { minimo: 500, cor: 'VERDE', fixacaoMin: 2, limite: 150 });
+  } finally {
+    servidor.closeAllConnections();
+    servidor.close();
+  }
+});

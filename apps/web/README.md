@@ -24,6 +24,17 @@ Entre como **criador** (abre e encerra a live) e como **espectador** (recarrega,
 | `src/http/app.ts` | Servidor `node:http` mínimo, sem dependências |
 | `public/` | Página (HTML, CSS e JS puro, sem build) |
 
+## Front-end (`public/`)
+
+HTML, CSS e JS puros, sem build. `estilo.css` é organizado em seções:
+
+1. **Tokens** em `:root`: superfícies (`--superficie`, `--superficie-campo`…), texto (`--texto`, `--texto-suave`), estados (`--erro`, `--sucesso`, `--ao-vivo`, `--desconto`), raios (`--raio-p` a `--raio-total`), espaços (`--espaco-1` a `--espaco-6`) e tipografia.
+2. **Faixas**: as classes `AZUL`, `VERDE`, `LARANJA`, `ROSA` e `VERMELHO` (os mesmos nomes que a API devolve em `cor`) definem `--cor`, `--brilho` e `--fundo-destacado` no elemento.
+3. **Componentes base**: `button` (acento), `button.sec`, `button.icone`, `button.principal`, campos, slider, `.avatar`.
+4. **Painéis**: player, recarga, VOD, chat, mensagem destacada (`.sc`), pílulas fixadas e diálogo de doação.
+
+Para uma tela nova (ex.: login), use só os tokens e os componentes base; não escreva cor ou raio fixos.
+
 ## Ponto de extensão para o login (#17)
 
 `src/auth/index.ts` pode exportar `registrarRotas(app, contexto)`; o servidor o chama sozinho, sem edição em `servidor.ts`:

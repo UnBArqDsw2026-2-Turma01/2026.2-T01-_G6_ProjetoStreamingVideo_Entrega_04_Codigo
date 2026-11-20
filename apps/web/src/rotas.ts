@@ -55,6 +55,7 @@ export function registrarRotasCA01(app: App, ctx: Contexto): void {
   };
 
   app.rota('GET', '/api/saude', () => ok({ status: 'ok' }));
+  app.rota('GET', '/api/faixas', () => ok(servico.faixas()));
 
   // Sessão de demonstração, enquanto o login real (#17) não é plugado.
   app.rota('POST', '/api/demo/sessao', (req) => {
