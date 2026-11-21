@@ -1,5 +1,7 @@
 # Streaming de Vídeo — Entrega 04 · Código
 
+[![CI](https://github.com/UnBArqDsw2026-2-Turma01/2026.2-T01-_G6_ProjetoStreamingVideo_Entrega_04_Codigo/actions/workflows/ci.yml/badge.svg)](https://github.com/UnBArqDsw2026-2-Turma01/2026.2-T01-_G6_ProjetoStreamingVideo_Entrega_04_Codigo/actions/workflows/ci.yml)
+
 Monorepo do **Grupo 06** (FGA0208 · UnB · 2026.2) que junta os três códigos da Entrega 03 e executa o cenário arquitetural **CA-01 — Live com doação destacada**, a evidência executável do Documento de Arquitetura (DAS).
 
 - **Documentação:** [GitHub Pages da Entrega 04](https://unbarqdsw2026-2-turma01.github.io/2026.2-T01-_G6_ProjetoStreamingVideo_Entrega_04/)
