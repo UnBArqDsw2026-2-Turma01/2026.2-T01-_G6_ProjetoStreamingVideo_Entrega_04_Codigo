@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CA-01 · Live com doação destacada</title>
+  <link rel="stylesheet" href="/estilo.css">
+</head>
+<body>
+  <header>
+    <h1>CA-01 · Live com doação destacada</h1>
+    <div class="sessao">
+      <span id="quem">Sem sessão</span>
+      <button data-papel="criador">Entrar como criador</button>
+      <button data-papel="espectador">Entrar como espectador</button>
+    </div>
+  </header>
+  <p id="aviso" role="status"></p>
+
+  <div class="palco">
+    <main>
+      <section id="player" aria-label="Live">
+        <div id="sem-live" class="tela">
+          <p id="texto-sem-live">Nenhuma live no ar.</p>
+          <form id="form-live" hidden>
+            <label>Título<input name="titulo" required></label>
+            <label>Qualidade
+              <select name="preset">
+                <option value="baixa-latencia">Baixa latência</option>
+                <option value="alta-qualidade">Alta qualidade</option>
+                <option value="movel">Móvel</option>
+              </select>
+            </label>
+            <button>Abrir live</button>
+          </form>
+        </div>
+        <div id="no-ar" class="tela" hidden>
+          <span class="selo-ao-vivo">Ao vivo</span>
+        </div>
+      </section>
+      <div class="barra-live">
+        <strong id="titulo-barra"></strong>
+        <button id="encerrar" class="sec" hidden>Encerrar live</button>
+      </div>
+
+      <section id="painel-recarga">
+        <div class="cabecalho-recarga">
+          <h2>Recarga de moeda virtual</h2>
+          <p>Saldo: <strong id="saldo">0</strong> <svg class="estrela" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.5 5.1 5.6.8-4.05 3.95.95 5.6L12 16.4l-5 2.65.95-5.6L3.9 9.5l5.6-.8z"/></svg></p>
+        </div>
+        <div id="ofertas" class="vazio">Entre para ver os pacotes.</div>
+        <div id="checkout" hidden>
+          <p id="checkout-texto"></p>
+          <button id="confirmar">Confirmar pagamento simulado</button>
+        </div>
+      </section>
+
+      <section id="painel-vod">
+        <h2>Transmissões anteriores</h2>
+        <div id="vods" class="grade-vod vazio">Nenhuma live encerrada ainda.</div>
+      </section>
+    </main>
+
+    <aside id="painel-chat" aria-label="Chat">
+      <h2>Chat ao vivo</h2>
+      <div id="fixadas" class="ticker"></div>
+      <div id="fixada-aberta" hidden></div>
+      <ol id="mensagens" aria-live="polite"></ol>
+      <form id="form-chat" class="barra-chat">
+        <div class="campo-chat">
+          <input name="texto" placeholder="Diga algo no chat" aria-label="Mensagem" autocomplete="off" required>
+          <button class="enviar icone" aria-label="Enviar" title="Enviar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+        </div>
+        <button type="button" id="abrir-doacao" class="icone" aria-label="Enviar mensagem destacada" title="Enviar mensagem destacada">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12.5V17a2 2 0 0 1-2 2H9l-4 3v-3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h7"/><path d="M18 2.5l1.1 2.3 2.4.3-1.8 1.7.5 2.4-2.2-1.2-2.2 1.2.5-2.4-1.8-1.7 2.4-.3z"/><path d="M7 11h7M7 14.5h4"/></svg>
+        </button>
+      </form>
+    </aside>
+  </div>
+  <dialog id="dialogo-doacao" aria-labelledby="titulo-doacao">
+    <form id="form-doacao">
+      <header>
+        <button type="button" id="fechar-doacao" class="icone" aria-label="Fechar">✕</button>
+        <h2 id="titulo-doacao">Enviar mensagem destacada</h2>
+      </header>
+      <div class="meta">
+        <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 3 3H7l3-3zM12 12v9"/></svg><span id="info-faixa"></span></span>
+        <span id="contador"></span>
+      </div>
+      <div class="previa">
+        <div class="sc-topo"><span id="previa-avatar" class="avatar"></span><span id="previa-autor" class="autor"></span><strong id="previa-valor"></strong></div>
+        <input name="mensagem" placeholder="Sua mensagem e o valor ficam visíveis para todos" aria-label="Mensagem" autocomplete="off">
+      </div>
+      <p class="valor"><input name="valor" type="number" min="1" step="1" aria-label="Moedas" required><span>moedas</span></p>
+      <div class="seletor">
+        <div id="marcas" class="marcas"></div>
+        <input id="faixa-slider" type="range" min="0" max="4" step="1" value="0" aria-label="Faixa da doação">
+      </div>
+      <p class="saldo-doacao">Saldo: <b id="saldo-doacao">0</b> <svg class="estrela" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.5 5.1 5.6.8-4.05 3.95.95 5.6L12 16.4l-5 2.65.95-5.6L3.9 9.5l5.6-.8z"/></svg></p>
+      <p id="erro-doacao" class="erro-doacao" role="alert" hidden></p>
+      <button class="principal">Doar e enviar</button>
+    </form>
+  </dialog>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
