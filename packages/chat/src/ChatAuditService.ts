@@ -1,9 +1,11 @@
-import type { ModerationVerdict } from "../moderation/ModerationVerdict";
-import type { ChatMessage } from "./ChatMessage";
+import type {
+  MensagemChat,
+  VereditoModeracao,
+} from "@g6/shared-kernel";
 
 export interface ChatAuditRecord {
-    readonly message: Readonly<ChatMessage>;
-    readonly verdict: Readonly<ModerationVerdict>;
+    readonly message: Readonly<MensagemChat>;
+    readonly verdict: Readonly<VereditoModeracao>;
     readonly recordedAt: string;
 }
 
@@ -11,12 +13,12 @@ export class ChatAuditService {
     private readonly records: ChatAuditRecord[] = [];
 
     public record(
-        message: ChatMessage,
-        verdict: ModerationVerdict,
+        mensagem: MensagemChat,
+        veredito: VereditoModeracao,
     ): void {
         const entry: ChatAuditRecord = Object.freeze({
-            message: Object.freeze({ ...message }),
-            verdict: Object.freeze({ ...verdict }),
+            message: Object.freeze({ ...mensagem }),
+            verdict: Object.freeze({ ...veredito }),
             recordedAt: new Date().toISOString(),
         });
 

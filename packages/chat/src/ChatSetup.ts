@@ -1,5 +1,4 @@
-import type { AutoModPipeline } from "../moderation/AutoModPipeline";
-
+import type { ModeracaoPort } from "@g6/shared-kernel";
 import { ChatAuditService } from "./ChatAuditService";
 import { ChatDeliveryService } from "./ChatDeliveryService";
 import { ChatRoom } from "./ChatRoom";
@@ -14,7 +13,7 @@ export interface ConfiguredChat {
 
 export class ChatSetup {
   constructor(
-    private readonly autoMod: AutoModPipeline,
+    private readonly moderacao: ModeracaoPort,
   ) {}
 
   public configureChat(): ConfiguredChat {
@@ -23,7 +22,7 @@ export class ChatSetup {
     const delivery = new ChatDeliveryService();
 
     const room = new ChatRoom(
-      this.autoMod,
+      this.moderacao,
       audit,
       quarantine,
     );

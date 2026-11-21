@@ -1,6 +1,7 @@
-import { ModerationDecision } from "../moderation/ModerationDecision";
-import type { AutoModPipeline } from "../moderation/AutoModPipeline";
-import type { ChatMessage } from "./ChatMessage";
+import type {
+  MensagemChat,
+  ModeracaoPort,
+} from "@g6/shared-kernel";
 import type { ChatObserver } from "./ChatObserver";
 import type { ChatAuditService } from "./ChatAuditService";
 import type { QuarantineQueue } from "./QuarantineQueue";
@@ -9,7 +10,7 @@ export class ChatRoom {
     private readonly observers: ChatObserver[] = [];
 
     constructor(
-        private readonly autoMod: AutoModPipeline,
+        private readonly moderacao: ModeracaoPort,
         private readonly audit: ChatAuditService,
         private readonly quarantine: QuarantineQueue,
     ){}
@@ -27,34 +28,34 @@ export class ChatRoom {
         }
     }
 
-    public publish(message: ChatMessage): void {
-        const verdict = this.autoMod.inspectMessage(message);
+    public async publish(mensagem: MensagemChat): Promise<void> {
+        const veredito = await this.moderacao.avaliar(mensagem);
 
-        this.audit.record(message, verdict);
+        this.audit.record(mensagem, veredito);
 
-        switch (verdict.decision) {
-            case ModerationDecision.APPROVED:
-                this.notify(message);
-                return;
-            
-            case ModerationDecision.QUARANTINED:
-                this.quarantine.enqueue(message, verdict);
-                return;
-            
-            case ModerationDecision.REJECTED:
-                return;
-            
-            default:
-                throw new Error("Decisão de moderação desconhecida!");
+        switch (veredito.decisao) {
+        case "aprovada":
+            this.notify(mensagem);
+            return;
+
+        case "quarentena":
+            this.quarantine.enqueue(mensagem, veredito);
+            return;
+
+        case "bloqueada":
+            return;
+
+        default:
+            throw new Error("Decisão de moderação desconhecida!");
         }
     }
 
-    private notify(message: ChatMessage): void {
+    private notify(mensagem: MensagemChat): void {
 
         const subscribers = [...this.observers];
 
         for (const observer of subscribers) {
-            observer.update(message);
+            observer.update(mensagem);
         }
     }
 }

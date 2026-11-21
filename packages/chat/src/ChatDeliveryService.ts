@@ -1,10 +1,10 @@
-import type { ChatMessage } from "./ChatMessage";
+import type { MensagemChat } from "@g6/shared-kernel";
 import type { ChatObserver } from "./ChatObserver";
 
 export class ChatDeliveryService implements ChatObserver {
-    public update(message: ChatMessage): void {
+    public update(mensagem: MensagemChat): void {
         console.log(
-            `[Chat ${message.channelId}] ${message.authorId}: ${message.content}`,
+            `[Chat] ${mensagem.id} ${mensagem.nomeAutor}: ${mensagem.texto}`,
         );
     }
 }
