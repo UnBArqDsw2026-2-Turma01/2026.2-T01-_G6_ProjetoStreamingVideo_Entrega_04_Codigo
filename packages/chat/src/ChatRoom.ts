@@ -1,61 +1,71 @@
-import type {
-  MensagemChat,
-  ModeracaoPort,
-} from "@g6/shared-kernel";
-import type { ChatObserver } from "./ChatObserver";
-import type { ChatAuditService } from "./ChatAuditService";
-import type { QuarantineQueue } from "./QuarantineQueue";
+import type { LiveId, MensagemEntregue } from "@g6/shared-kernel";
+import type { ChatObserver } from "./ChatObserver.js";
 
 export class ChatRoom {
-    private readonly observers: ChatObserver[] = [];
+  private readonly observers = new Map<
+    LiveId,
+    Array<(mensagem: MensagemEntregue) => void>
+  >();
+  private readonly falhas: unknown[] = [];
 
-    constructor(
-        private readonly moderacao: ModeracaoPort,
-        private readonly audit: ChatAuditService,
-        private readonly quarantine: QuarantineQueue,
-    ){}
+  public subscribe(
+    live: LiveId,
+    observer: ChatObserver,
+  ): () => void {
+    const inscritos = this.observers.get(live) ?? [];
+    const listener = (mensagem: MensagemEntregue) =>
+      observer.update(mensagem);
 
-    public subscribe(observer: ChatObserver): void {
-        if (!this.observers.includes(observer)) {
-            this.observers.push(observer);
-        }
+    inscritos.push(listener);
+    this.observers.set(live, inscritos);
+
+    let cancelado = false;
+    return () => {
+      if (cancelado) return;
+      cancelado = true;
+
+      const atuais = this.observers.get(live) ?? [];
+      this.observers.set(
+        live,
+        atuais.filter((inscrito) => inscrito !== listener),
+      );
+    };
+  }
+
+  public subscribeFunction(
+    live: LiveId,
+    listener: (mensagem: MensagemEntregue) => void,
+  ): () => void {
+    const inscritos = this.observers.get(live) ?? [];
+    inscritos.push(listener);
+    this.observers.set(live, inscritos);
+
+    let cancelado = false;
+    return () => {
+      if (cancelado) return;
+      cancelado = true;
+
+      const atuais = this.observers.get(live) ?? [];
+      this.observers.set(
+        live,
+        atuais.filter((inscrito) => inscrito !== listener),
+      );
+    };
+  }
+
+  public publish(live: LiveId, mensagem: MensagemEntregue): void {
+    const inscritos = this.observers.get(live) ?? [];
+
+    for (const inscrito of [...inscritos]) {
+      try {
+        inscrito(mensagem);
+      } catch (erro) {
+        this.falhas.push(erro);
+      }
     }
+  }
 
-    public unsubscribe(observer: ChatObserver): void {
-        const index = this.observers.indexOf(observer);
-        if (index !== -1) {
-            this.observers.splice(index, 1);
-        }
-    }
-
-    public async publish(mensagem: MensagemChat): Promise<void> {
-        const veredito = await this.moderacao.avaliar(mensagem);
-
-        this.audit.record(mensagem, veredito);
-
-        switch (veredito.decisao) {
-        case "aprovada":
-            this.notify(mensagem);
-            return;
-
-        case "quarentena":
-            this.quarantine.enqueue(mensagem, veredito);
-            return;
-
-        case "bloqueada":
-            return;
-
-        default:
-            throw new Error("Decisão de moderação desconhecida!");
-        }
-    }
-
-    private notify(mensagem: MensagemChat): void {
-
-        const subscribers = [...this.observers];
-
-        for (const observer of subscribers) {
-            observer.update(mensagem);
-        }
-    }
+  get falhasEntrega(): readonly unknown[] {
+    return [...this.falhas];
+  }
 }

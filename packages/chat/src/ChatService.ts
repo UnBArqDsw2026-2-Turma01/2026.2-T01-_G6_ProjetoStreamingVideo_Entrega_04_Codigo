@@ -10,8 +10,9 @@ import type {
   Resultado,
 } from "@g6/shared-kernel";
 
-import { ChatAuditService } from "./ChatAuditService";
-import { QuarantineQueue } from "./QuarantineQueue";
+import { ChatAuditService } from "./ChatAuditService.js";
+import { ChatRoom } from "./ChatRoom.js";
+import { QuarantineQueue } from "./QuarantineQueue.js";
 
 export interface DependenciasChatService {
   readonly moderacao: ModeracaoPort;
@@ -19,13 +20,9 @@ export interface DependenciasChatService {
 }
 
 export class ChatService implements ChatPort {
-  private readonly inscritos = new Map<
-    LiveId,
-    Array<(mensagem: MensagemEntregue) => void>
-  >();
-
   private readonly auditoria = new ChatAuditService();
   private readonly quarentena = new QuarantineQueue();
+  private readonly sala = new ChatRoom();
 
   constructor(private readonly dependencias: DependenciasChatService) {}
 
@@ -33,22 +30,7 @@ export class ChatService implements ChatPort {
     live: LiveId,
     ouvinte: (mensagem: MensagemEntregue) => void,
   ): Cancelamento {
-    const lista = this.inscritos.get(live) ?? [];
-    lista.push(ouvinte);
-    this.inscritos.set(live, lista);
-
-    let cancelado = false;
-
-    return () => {
-      if (cancelado) return;
-      cancelado = true;
-
-      const atuais = this.inscritos.get(live) ?? [];
-      this.inscritos.set(
-        live,
-        atuais.filter((inscrito) => inscrito !== ouvinte),
-      );
-    };
+    return this.sala.subscribeFunction(live, ouvinte);
   }
 
   private async processar(
@@ -85,70 +67,50 @@ export class ChatService implements ChatPort {
     }
   }
 
-  async publicar(
+  private async publicarMensagem(
     live: LiveId,
-    mensagem: MensagemChat,
+    entregue: MensagemEntregue,
   ): Promise<Resultado<void>> {
+    const mensagem = entregue.mensagem;
     const resultado = await this.processar(mensagem);
 
     if (!resultado.ok) {
       return resultado;
     }
 
-    const entregue: MensagemEntregue = {
-      live,
-      destacada: false,
-      mensagem,
-    };
-
-    const inscritos = this.inscritos.get(live) ?? [];
-
-    for (const ouvinte of [...inscritos]) {
-      ouvinte(entregue);
-    }
+    this.sala.publish(live, entregue);
 
     this.dependencias.eventos.publicar({
       tipo: "MensagemPublicada",
       live,
       autor: mensagem.autor,
-      destacada: false,
+      destacada: entregue.destacada,
       em: new Date(),
     });
 
     return { ok: true, valor: undefined };
   }
 
+  async publicar(
+    live: LiveId,
+    mensagem: MensagemChat,
+  ): Promise<Resultado<void>> {
+    return this.publicarMensagem(live, {
+      live,
+      destacada: false,
+      mensagem,
+    });
+  }
+
   async publicarDestacada(
     live: LiveId,
     mensagem: MensagemDestacada,
   ): Promise<Resultado<void>> {
-    const resultado = await this.processar(mensagem);
-
-    if (!resultado.ok) {
-      return resultado;
-    }
-
-    const entregue: MensagemEntregue = {
+    return this.publicarMensagem(live, {
       live,
       destacada: true,
       mensagem,
-    };
-
-    const inscritos = this.inscritos.get(live) ?? [];
-
-    for (const ouvinte of [...inscritos]) {
-      ouvinte(entregue);
-    }
-
-    this.dependencias.eventos.publicar({
-      tipo: "MensagemPublicada",
-      live,
-      autor: mensagem.autor,
-      destacada: true,
-      em: new Date(),
     });
-
-    return { ok: true, valor: undefined };
   }
 
   get registrosAuditoria() {
@@ -157,5 +119,9 @@ export class ChatService implements ChatPort {
 
   get entradasQuarentena() {
     return this.quarentena.getEntries();
+  }
+
+  get falhasEntrega() {
+    return this.sala.falhasEntrega;
   }
 }

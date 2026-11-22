@@ -1,7 +1,7 @@
-import type { MensagemChat } from "@g6/shared-kernel";
+import type { MensagemEntregue } from "@g6/shared-kernel";
 
 export interface ChatObserver {
-    update(message: MensagemChat): void;
+  update(message: MensagemEntregue): void;
 }
 
 /** @deprecated Use ChatObserver. */
