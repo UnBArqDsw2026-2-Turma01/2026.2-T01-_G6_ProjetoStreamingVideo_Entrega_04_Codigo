@@ -331,10 +331,122 @@ dialog::backdrop { background: rgb(0 0 0 / 0.6); }
 .saldo-doacao { margin: 0; text-align: center; color: var(--texto-suave); font-size: var(--texto-m); }
 .erro-doacao { margin: 0; text-align: center; color: var(--erro); font-size: var(--texto-m); }
 
-/* Meio de pagamento da recarga (simulado, Mercado Pago, Stripe) */
-.meios { display: flex; flex-wrap: wrap; gap: var(--espaco-2); margin-bottom: var(--espaco-3); }
-.meios label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--borda); border-radius: var(--raio-m); cursor: pointer; }
-.meios input { margin: 0; }
+/* Meio de pagamento da recarga (simulado, Mercado Pago, Stripe) - posicionado com destaque embaixo dos pacotes */
+.secao-meios {
+  margin-top: var(--espaco-4);
+  margin-bottom: var(--espaco-2);
+  padding: var(--espaco-3) var(--espaco-4);
+  border-radius: var(--raio-g);
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+}
+.titulo-meios {
+  font-size: var(--texto-m);
+  font-weight: 600;
+  color: var(--texto);
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.titulo-meios::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 14px;
+  background: var(--acento);
+  border-radius: 2px;
+}
+.meios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+.meio-opcao {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border: 2px solid var(--borda);
+  border-radius: var(--raio-m);
+  background: var(--superficie-campo);
+  color: var(--texto);
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color var(--transicao), background-color var(--transicao), box-shadow var(--transicao), color var(--transicao);
+  user-select: none;
+}
+.meio-opcao:hover {
+  border-color: color-mix(in srgb, var(--acento) 60%, var(--borda));
+  background: color-mix(in srgb, var(--acento) 8%, var(--superficie-campo));
+}
+.meio-opcao.selecionado,
+.meio-opcao:has(input:checked) {
+  border-color: var(--acento);
+  background: color-mix(in srgb, var(--acento) 18%, var(--superficie-campo));
+  color: var(--texto-sobre-cor);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--acento), 0 3px 10px color-mix(in srgb, var(--acento) 25%, transparent);
+}
+.meio-opcao input[type="radio"] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--texto-suave);
+  border-radius: 50%;
+  margin: 0;
+  outline: none;
+  display: grid;
+  place-content: center;
+  transition: border-color var(--transicao);
+  background: transparent;
+}
+.meio-opcao input[type="radio"]::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--acento);
+  transform: scale(0);
+  transition: transform var(--transicao);
+}
+.meio-opcao.selecionado input[type="radio"],
+.meio-opcao input[type="radio"]:checked {
+  border-color: var(--acento);
+}
+.meio-opcao.selecionado input[type="radio"]::before,
+.meio-opcao input[type="radio"]:checked::before {
+  transform: scale(1);
+}
+.icone-meio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.icone-simulado {
+  color: #fbbf24;
+}
+.icone-mercadopago {
+  background: #009ee3;
+  color: #fff;
+  font-size: 10px;
+}
+.icone-stripe {
+  background: #635bff;
+  color: #fff;
+  font-size: 11px;
+}
 #checkout-externo { display: flex; flex-direction: column; gap: var(--espaco-2); margin: 0; }
-#checkout-externo .botao { align-self: flex-start; display: inline-block; padding: 8px 14px; border-radius: var(--raio-m); background: var(--acento); color: var(--texto-sobre-cor); font-weight: 500; text-decoration: none; }
-#checkout-externo .botao:hover { filter: brightness(1.1); }
+#checkout-externo .botao { align-self: flex-start; display: inline-block; padding: 10px 18px; border-radius: var(--raio-m); background: var(--acento); color: var(--texto-sobre-cor); font-weight: 600; text-decoration: none; font-size: 14px; }
+#checkout-externo .botao:hover { filter: brightness(1.15); }

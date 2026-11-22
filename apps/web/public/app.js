@@ -121,16 +121,42 @@ async function carregarMeios() {
   estado.meios = await api('GET', '/api/recarga/meios');
   if (!estado.meios.includes(estado.meio)) estado.meio = estado.meios[0];
   const caixa = $('#meios');
-  caixa.hidden = estado.meios.length < 2;
+  const secao = $('#secao-meios');
+  if (secao) secao.hidden = !estado.meios || estado.meios.length === 0;
+  caixa.hidden = false;
   caixa.replaceChildren(...estado.meios.map((meio) => {
     const rotulo = document.createElement('label');
+    rotulo.className = meio === estado.meio ? 'meio-opcao selecionado' : 'meio-opcao';
     const opcao = document.createElement('input');
     opcao.type = 'radio';
     opcao.name = 'meio';
     opcao.value = meio;
     opcao.checked = meio === estado.meio;
-    opcao.addEventListener('change', () => { estado.meio = meio; });
-    rotulo.append(opcao, NOME_DO_MEIO[meio] ?? meio);
+    opcao.addEventListener('change', () => {
+      estado.meio = meio;
+      caixa.querySelectorAll('.meio-opcao').forEach((el) => {
+        const inp = el.querySelector('input');
+        el.classList.toggle('selecionado', inp?.checked ?? false);
+      });
+      if (estado.checkout) {
+        tentar(async () => {
+          estado.checkout = await api('POST', '/api/recarga', { pacote: estado.checkout.pacote, meio: estado.meio });
+          mostrarCheckout();
+        });
+      }
+    });
+
+    const icone = document.createElement('span');
+    icone.className = `icone-meio icone-${meio}`;
+    if (meio === 'simulado') icone.textContent = '⚡';
+    else if (meio === 'mercadopago') icone.textContent = 'MP';
+    else if (meio === 'stripe') icone.textContent = 'S';
+
+    const texto = document.createElement('span');
+    texto.className = 'nome-meio';
+    texto.textContent = NOME_DO_MEIO[meio] ?? meio;
+
+    rotulo.append(opcao, icone, texto);
     return rotulo;
   }));
 }
