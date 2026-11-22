@@ -1,4 +1,5 @@
-// Contexto de identidade e acesso (Chain of Responsibility) · AutenticacaoPort.
-// Ponto de entrada público do pacote: exporte aqui só o que outros módulos podem usar.
-// Implementação: #5.
-export {};
+export { AutenticacaoService, criarAutenticacao, type OpcoesAutenticacao } from './autenticacao-service';
+export { criarAutenticacaoExemplo } from './exemplos';
+export { Account, AccountStatus, InMemoryAccountRepository } from './autenticacao/dominio/account';
+export { Credential } from './autenticacao/dominio/credential';
+export { TwoFactorAuth, generateTotp } from './autenticacao/dominio/two-factor-auth';
