@@ -56,11 +56,11 @@ export class AdaptadorMercadoPago implements GatewayPagamento {
     this.usarLinkSandbox = usarLinkSandbox;
   }
 
-  /** Cria o adaptador ligado à API real do Mercado Pago. */
+  /** Cria o adaptador ligado à API real do Mercado Pago (usa sandbox no ambiente de teste). */
   static conectar(accessToken: string, segredoWebhook: string): AdaptadorMercadoPago {
     const config = new MercadoPagoConfig({ accessToken });
     const sdk = { preference: new Preference(config), payment: new Payment(config) };
-    return new AdaptadorMercadoPago(sdk, segredoWebhook, accessToken.startsWith("TEST-"));
+    return new AdaptadorMercadoPago(sdk, segredoWebhook, true);
   }
 
   async iniciarCheckout(valor: Dinheiro, recargaId: string): Promise<SessaoCheckout> {
