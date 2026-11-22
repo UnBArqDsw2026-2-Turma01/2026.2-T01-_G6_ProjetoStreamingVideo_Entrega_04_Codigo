@@ -1,0 +1,10 @@
+.login-painel { max-width: 30rem; margin: var(--espaco-6) auto; padding: var(--espaco-6); background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio-g); }
+.login-painel a { color: var(--texto-suave); }
+.login-painel form, #credenciais-login { display: grid; gap: var(--espaco-5); }
+.login-painel label { display: grid; gap: var(--espaco-2); }
+.login-painel input { width: 100%; box-sizing: border-box; }
+.login-painel p, .login-painel details { line-height: 1.6; }
+.login-painel code { overflow-wrap: anywhere; }
+#aviso-login { color: var(--erro); }
+#aviso-login.ok { color: var(--sucesso); }
+.login-painel [hidden] { display: none; }
