@@ -6,6 +6,8 @@ import type { EventBus, EventoDe, EventoDominio, TipoEvento } from '../eventos';
  *
  * - **Garante:** entrega síncrona, em ordem de inscrição, com proteção contra
  *   reentrância (fila de despacho para eventos publicados durante o tratamento de outro).
+ * - **Falhas:** um tratador que lança não impede a entrega aos demais nem trava a fila;
+ *   ao fim do despacho, as falhas voltam juntas ao publicador como `AggregateError`.
  */
 export class EventBusEmMemoria implements EventBus {
   private readonly tratadores = new Map<TipoEvento, Array<(evento: any) => void>>();
@@ -20,16 +22,25 @@ export class EventBusEmMemoria implements EventBus {
     }
 
     this.emProcessamento = true;
+    const falhas: unknown[] = [];
     try {
       while (this.fila.length > 0) {
         const proximo = this.fila.shift()!;
         const lista = this.tratadores.get(proximo.tipo) ?? [];
         for (const tratador of [...lista]) {
-          tratador(proximo);
+          // Um tratador que falha não impede os demais nem trava a fila.
+          try {
+            tratador(proximo);
+          } catch (erro) {
+            falhas.push(erro);
+          }
         }
       }
     } finally {
       this.emProcessamento = false;
+    }
+    if (falhas.length > 0) {
+      throw new AggregateError(falhas, `${falhas.length} tratador(es) falharam ao receber eventos`);
     }
   }
 

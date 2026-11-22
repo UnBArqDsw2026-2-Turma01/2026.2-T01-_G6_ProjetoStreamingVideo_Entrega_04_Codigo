@@ -4,3 +4,4 @@
 export * from './tipos';
 export * from './ports';
 export * from './eventos';
+export * from './eventbus';

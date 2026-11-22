@@ -1,5 +1,7 @@
 # Streaming de Vídeo — Entrega 04 · Código
 
+[![CI](https://github.com/UnBArqDsw2026-2-Turma01/2026.2-T01-_G6_ProjetoStreamingVideo_Entrega_04_Codigo/actions/workflows/ci.yml/badge.svg)](https://github.com/UnBArqDsw2026-2-Turma01/2026.2-T01-_G6_ProjetoStreamingVideo_Entrega_04_Codigo/actions/workflows/ci.yml)
+
 Monorepo do **Grupo 06** (FGA0208 · UnB · 2026.2) que junta os três códigos da Entrega 03 e executa o cenário arquitetural **CA-01 — Live com doação destacada**, a evidência executável do Documento de Arquitetura (DAS).
 
 - **Documentação:** [GitHub Pages da Entrega 04](https://unbarqdsw2026-2-turma01.github.io/2026.2-T01-_G6_ProjetoStreamingVideo_Entrega_04/)
@@ -49,6 +51,8 @@ npm test -w @g6/chat # só um pacote
 ```
 
 ## Regras em uma linha cada
+
+> O guia completo (donos, passo a passo, importação da E03, mudança de contrato) está em [CONTRIBUTING.md](CONTRIBUTING.md).
 
 1. Altere só os caminhos do **Escopo de arquivos** da sua issue (os donos estão em [`CODEOWNERS`](CODEOWNERS)).
 2. Pacote importa só `@g6/shared-kernel`; só `apps/*` compõem módulos.
