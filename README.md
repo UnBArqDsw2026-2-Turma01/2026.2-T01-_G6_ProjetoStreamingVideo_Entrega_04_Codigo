@@ -54,25 +54,14 @@ npm test -w @g6/chat # só um pacote
 
 ## Docker (local)
 
-Sobe o monorepo em um container Node 22, com o código montado em volume. Não há bancos: só o ambiente das apps.
+Sobe a página integrada do CA-01 (`apps/web`) com um comando. A imagem usa Node 22 (exigência do monorepo), sem `.env` e sem segredos: o gateway de pagamento é o **simulado**.
 
 ```bash
-cp .env.example .env
-docker compose up -d --build dev          # ambiente persistente (porta 3000 reservada)
-docker compose exec dev node -v           # deve ser v22.x
-docker compose exec dev npm run demo      # CA-01 no terminal
-docker compose --profile check run --rm check
-docker compose --profile web run --rm web
-docker compose --profile demo run --rm demo
-docker compose down
+docker compose up --build
+# CA-01 no navegador: http://localhost:3000
 ```
 
-| Serviço | Perfil | Comando |
-| --- | --- | --- |
-| `dev` | (padrão) | keep-alive; use `exec` para rodar npm |
-| `demo` | `demo` | `npm run demo` (one-shot) |
-| `web` | `web` | `npm run web` (one-shot até a #16) |
-| `check` | `check` | `npm run check` (one-shot) |
+Arquivos da Visão de Implantação (#20): `Dockerfile`, `compose.yaml`, `.dockerignore`.
 
 ## Regras em uma linha cada
 

@@ -1,9 +1,10 @@
-# Ambiente local do monorepo G6 (Node 22 + npm workspaces).
+# Imagem do monorepo G6 para demonstração do CA-01 (#20).
+# O engines do repositório exige Node >=22 (a issue citava 20; alinhamos ao monorepo).
 FROM node:22-bookworm-slim
 
 WORKDIR /app
 
-# Manifests primeiro para aproveitar cache de camadas no npm ci.
+# Manifests primeiro: cacheia `npm ci` quando só o código muda.
 COPY package.json package-lock.json ./
 COPY apps/cli-demo/package.json ./apps/cli-demo/
 COPY apps/web/package.json ./apps/web/
@@ -17,16 +18,17 @@ COPY packages/transmissao/package.json ./packages/transmissao/
 
 RUN npm ci
 
+# Código do monorepo (sem .env: gateway de pagamento fica só o simulado).
 COPY . .
 
-# node:22 já cria o usuário "node" (uid 1000).
 RUN chown -R node:node /app
 USER node
 
-ENV NODE_ENV=development
+# Sem credenciais de Mercado Pago/Stripe na imagem: gatewaysDoAmbiente usa só `simulado`.
+ENV NODE_ENV=production
 ENV PORT=3000
 
 EXPOSE 3000
 
-# Keep-alive para o serviço `dev` do Compose; profiles sobrescrevem o comando.
-CMD ["sleep", "infinity"]
+# Serve a página integrada do CA-01 (`apps/web`).
+CMD ["npm", "run", "web"]

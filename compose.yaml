@@ -1,0 +1,18 @@
+# Visão de Implantação executável (#20).
+# Uso: docker compose up --build
+# CA-01: http://localhost:3000
+name: g6-streaming
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: g6-streaming:local
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Sem STRIPE_* / MERCADO_PAGO_*: monetização usa apenas o gateway simulado.
+    restart: unless-stopped
