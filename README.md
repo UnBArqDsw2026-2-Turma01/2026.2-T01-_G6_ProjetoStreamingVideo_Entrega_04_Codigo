@@ -37,6 +37,8 @@ Cada pacote mantém o executor de testes do código de origem na Entrega 03 (Vit
 
 Node.js **22 ou superior** (exigido pelo código da SubEquipe_01) e npm.
 
+Para containers locais: [Docker](https://docs.docker.com/get-docker/) com Compose v2.
+
 ## Comandos
 
 ```bash
@@ -49,6 +51,17 @@ npm run web          # página integrada (apps/web)
 
 npm test -w @g6/chat # só um pacote
 ```
+
+## Docker (local)
+
+Sobe a página integrada do CA-01 (`apps/web`) com um comando. A imagem usa Node 22 (exigência do monorepo), sem `.env` e sem segredos: o gateway de pagamento é o **simulado**.
+
+```bash
+docker compose up --build
+# CA-01 no navegador: http://localhost:3000
+```
+
+Arquivos da Visão de Implantação (#20): `Dockerfile`, `compose.yaml`, `.dockerignore`.
 
 ## Regras em uma linha cada
 
