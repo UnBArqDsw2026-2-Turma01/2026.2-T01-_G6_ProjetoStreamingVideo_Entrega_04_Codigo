@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar · CA-01</title>
+  <link rel="stylesheet" href="/estilo.css"><link rel="stylesheet" href="/login.css">
+</head>
+<body>
+  <main class="login-painel">
+    <a href="/">← Voltar à transmissão</a>
+    <h1 id="titulo-login">Entrar na plataforma</h1>
+    <p id="descricao-login">Use sua conta de criador ou espectador.</p>
+    <form id="form-login">
+      <div id="credenciais-login">
+        <label>E-mail<input name="email" type="email" autocomplete="username" required maxlength="254"></label>
+        <label>Senha<input name="senha" type="password" autocomplete="current-password" required maxlength="1024"></label>
+      </div>
+      <label>Código do autenticador <span id="opcional-login">(obrigatório para criadores)</span>
+        <input name="codigoTotp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" aria-describedby="ajuda-totp">
+      </label>
+      <p id="ajuda-totp">Se acabou de usar um código, aguarde o próximo intervalo de 30 segundos.</p>
+      <button id="enviar-login" type="submit">Entrar</button>
+    </form>
+    <p id="aviso-login" role="status" aria-live="polite"></p>
+    <details id="ajuda-demo">
+      <summary>Contas de demonstração</summary>
+      <p>Espectador: <strong>espectador@ca01.test</strong><br>Criador: <strong>criador@ca01.test</strong></p>
+      <p>Senha de ambos: <strong>Exemplo-CA01!</strong></p>
+      <p>O criador usa TOTP de seis dígitos (SHA-1, período de 30 segundos).
+        Segredo Base32 público para cadastrar no autenticador:
+        <code>ONSWO4TFMRXS24DVMJWGSY3PFVSGK3LPFVRWCMBR</code></p>
+    </details>
+  </main>
+  <script type="module" src="/login.js"></script>
+</body>
+</html>
