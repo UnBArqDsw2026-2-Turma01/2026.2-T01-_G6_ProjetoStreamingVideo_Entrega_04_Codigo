@@ -1,7 +1,7 @@
-import { Account } from "../dominio/account.ts";
-import type { LoginRateLimiter } from "../dominio/login-rate-limiter.ts";
-import type { AuthenticationContext, AuthenticationOutcome } from "./authentication-context.ts";
-import { AbstractAuthenticationHandler } from "./authentication-handler.ts";
+import { Account } from "../dominio/account";
+import type { LoginRateLimiter } from "../dominio/login-rate-limiter";
+import type { AuthenticationContext, AuthenticationOutcome } from "./authentication-context";
+import { AbstractAuthenticationHandler } from "./authentication-handler";
 
 const CREDENTIAL_FAILURES = new Set(["INVALID_CREDENTIALS", "INVALID_TOTP"]);
 

@@ -1,5 +1,5 @@
-import type { AuthenticationContext, AuthenticationOutcome } from "./authentication-context.ts";
-import { AbstractAuthenticationHandler } from "./authentication-handler.ts";
+import type { AuthenticationContext, AuthenticationOutcome } from "./authentication-context";
+import { AbstractAuthenticationHandler } from "./authentication-handler";
 
 /**
  * ConcreteHandler terminal da cadeia de step-up: conclui o `StepUpAuthChallenge`

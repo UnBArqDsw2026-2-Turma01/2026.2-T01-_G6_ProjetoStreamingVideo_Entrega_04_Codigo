@@ -2,26 +2,26 @@
  * Demonstração do Chain of Responsibility na autenticação: `npm run demo`.
  * Relógio fixo e ids sequenciais, para que a saída seja a mesma a cada execução.
  */
-import { Account, AccountStatus, InMemoryAccountRepository } from "./dominio/account.ts";
-import { InMemoryAuditLogger } from "./dominio/audit-log.ts";
-import { type ClientIntegrityAttestation, solveProofOfWork } from "./dominio/client-integrity-attestation.ts";
-import { Credential, type ScryptParams } from "./dominio/credential.ts";
-import { LeakedPasswordBloomFilter } from "./dominio/leaked-password-bloom-filter.ts";
-import { LoginRateLimiter } from "./dominio/login-rate-limiter.ts";
-import { HmacTokenService, InMemorySessionStore } from "./dominio/session.ts";
-import { StepUpAuthChallenge, StepUpTrigger } from "./dominio/step-up-auth-challenge.ts";
-import { generateTotp, TwoFactorAuth } from "./dominio/two-factor-auth.ts";
-import { AccountStatusHandler } from "./cadeia/account-status-handler.ts";
+import { Account, AccountStatus, InMemoryAccountRepository } from "./dominio/account";
+import { InMemoryAuditLogger } from "./dominio/audit-log";
+import { type ClientIntegrityAttestation, solveProofOfWork } from "./dominio/client-integrity-attestation";
+import { Credential, type ScryptParams } from "./dominio/credential";
+import { LeakedPasswordBloomFilter } from "./dominio/leaked-password-bloom-filter";
+import { LoginRateLimiter } from "./dominio/login-rate-limiter";
+import { HmacTokenService, InMemorySessionStore } from "./dominio/session";
+import { StepUpAuthChallenge, StepUpTrigger } from "./dominio/step-up-auth-challenge";
+import { generateTotp, TwoFactorAuth } from "./dominio/two-factor-auth";
+import { AccountStatusHandler } from "./cadeia/account-status-handler";
 import {
     type AuthenticationDependencies,
     buildLoginChain,
     buildStepUpChain,
     describeChain,
-} from "./cadeia/authentication-chains.ts";
-import { AuthenticationContext, type AuthenticationOutcome } from "./cadeia/authentication-context.ts";
-import { PasswordHandler } from "./cadeia/password-handler.ts";
-import { RateLimitHandler } from "./cadeia/rate-limit-handler.ts";
-import { LoginService } from "./login-service.ts";
+} from "./cadeia/authentication-chains";
+import { AuthenticationContext, type AuthenticationOutcome } from "./cadeia/authentication-context";
+import { PasswordHandler } from "./cadeia/password-handler";
+import { RateLimitHandler } from "./cadeia/rate-limit-handler";
+import { LoginService } from "./login-service";
 
 // Custo do scrypt reduzido só para a demonstração rodar rápido; o padrão do código é o do OWASP (N = 2^17).
 const DEMO_SCRYPT: ScryptParams = { N: 2 ** 14, r: 8, p: 1 };

@@ -1,17 +1,17 @@
-import type { AccountRepository } from "../dominio/account.ts";
-import type { ScryptParams } from "../dominio/credential.ts";
-import type { LeakedPasswordBloomFilter } from "../dominio/leaked-password-bloom-filter.ts";
-import type { LoginRateLimiter } from "../dominio/login-rate-limiter.ts";
-import type { HmacTokenService, SessionStore } from "../dominio/session.ts";
-import { AccountStatusHandler } from "./account-status-handler.ts";
-import type { AuthenticationHandler } from "./authentication-handler.ts";
-import { ClientIntegrityHandler, type ClientIntegrityOptions } from "./client-integrity-handler.ts";
-import { LeakedPasswordHandler } from "./leaked-password-handler.ts";
-import { PasswordHandler } from "./password-handler.ts";
-import { RateLimitHandler } from "./rate-limit-handler.ts";
-import { SessionIssuerHandler, type SessionIssuerOptions } from "./session-issuer-handler.ts";
-import { StepUpGrantHandler } from "./step-up-grant-handler.ts";
-import { TwoFactorHandler } from "./two-factor-handler.ts";
+import type { AccountRepository } from "../dominio/account";
+import type { ScryptParams } from "../dominio/credential";
+import type { LeakedPasswordBloomFilter } from "../dominio/leaked-password-bloom-filter";
+import type { LoginRateLimiter } from "../dominio/login-rate-limiter";
+import type { HmacTokenService, SessionStore } from "../dominio/session";
+import { AccountStatusHandler } from "./account-status-handler";
+import type { AuthenticationHandler } from "./authentication-handler";
+import { ClientIntegrityHandler, type ClientIntegrityOptions } from "./client-integrity-handler";
+import { LeakedPasswordHandler } from "./leaked-password-handler";
+import { PasswordHandler } from "./password-handler";
+import { RateLimitHandler } from "./rate-limit-handler";
+import { SessionIssuerHandler, type SessionIssuerOptions } from "./session-issuer-handler";
+import { StepUpGrantHandler } from "./step-up-grant-handler";
+import { TwoFactorHandler } from "./two-factor-handler";
 
 export interface AuthenticationDependencies {
     readonly accounts: AccountRepository;

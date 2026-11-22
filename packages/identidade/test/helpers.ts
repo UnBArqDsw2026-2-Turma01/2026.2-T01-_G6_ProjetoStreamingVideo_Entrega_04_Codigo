@@ -3,23 +3,23 @@ import {
     AccountStatus,
     type AccountRole,
     InMemoryAccountRepository,
-} from "../src/autenticacao/dominio/account.ts";
+} from "../src/autenticacao/dominio/account";
 import {
     type ClientIntegrityAttestation,
     solveProofOfWork,
-} from "../src/autenticacao/dominio/client-integrity-attestation.ts";
-import { Credential, type ScryptParams } from "../src/autenticacao/dominio/credential.ts";
-import { LeakedPasswordBloomFilter } from "../src/autenticacao/dominio/leaked-password-bloom-filter.ts";
-import { LoginRateLimiter } from "../src/autenticacao/dominio/login-rate-limiter.ts";
-import { HmacTokenService, InMemorySessionStore } from "../src/autenticacao/dominio/session.ts";
-import { TwoFactorAuth } from "../src/autenticacao/dominio/two-factor-auth.ts";
+} from "../src/autenticacao/dominio/client-integrity-attestation";
+import { Credential, type ScryptParams } from "../src/autenticacao/dominio/credential";
+import { LeakedPasswordBloomFilter } from "../src/autenticacao/dominio/leaked-password-bloom-filter";
+import { LoginRateLimiter } from "../src/autenticacao/dominio/login-rate-limiter";
+import { HmacTokenService, InMemorySessionStore } from "../src/autenticacao/dominio/session";
+import { TwoFactorAuth } from "../src/autenticacao/dominio/two-factor-auth";
 import {
     AuthenticationContext,
     type AuthenticationOutcome,
     type AuthenticationRequest,
-} from "../src/autenticacao/cadeia/authentication-context.ts";
-import type { AuthenticationDependencies } from "../src/autenticacao/cadeia/authentication-chains.ts";
-import type { AuthenticationHandler } from "../src/autenticacao/cadeia/authentication-handler.ts";
+} from "../src/autenticacao/cadeia/authentication-context";
+import type { AuthenticationDependencies } from "../src/autenticacao/cadeia/authentication-chains";
+import type { AuthenticationHandler } from "../src/autenticacao/cadeia/authentication-handler";
 
 /** Custo baixo só nos testes, para a suíte não levar meio segundo por hash. */
 export const FAST_SCRYPT: ScryptParams = { N: 2 ** 10, r: 8, p: 1 };

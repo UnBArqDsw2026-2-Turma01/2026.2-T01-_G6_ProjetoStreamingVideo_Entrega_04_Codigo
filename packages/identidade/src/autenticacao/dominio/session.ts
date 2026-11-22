@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { Account } from "./account.ts";
+import type { Account } from "./account";
 
 export interface SessionFields {
     readonly id: string;

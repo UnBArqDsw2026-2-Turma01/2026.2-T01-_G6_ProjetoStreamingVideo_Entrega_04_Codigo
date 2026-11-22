@@ -3,12 +3,12 @@ import { describe, it } from "node:test";
 import {
     solveProofOfWork,
     verifyProofOfWork,
-} from "../src/autenticacao/dominio/client-integrity-attestation.ts";
-import { Credential } from "../src/autenticacao/dominio/credential.ts";
-import { LeakedPasswordBloomFilter } from "../src/autenticacao/dominio/leaked-password-bloom-filter.ts";
-import { LoginRateLimiter } from "../src/autenticacao/dominio/login-rate-limiter.ts";
-import { generateTotp, TwoFactorAuth } from "../src/autenticacao/dominio/two-factor-auth.ts";
-import { FAST_SCRYPT, TOTP_SECRET } from "./helpers.ts";
+} from "../src/autenticacao/dominio/client-integrity-attestation";
+import { Credential } from "../src/autenticacao/dominio/credential";
+import { LeakedPasswordBloomFilter } from "../src/autenticacao/dominio/leaked-password-bloom-filter";
+import { LoginRateLimiter } from "../src/autenticacao/dominio/login-rate-limiter";
+import { generateTotp, TwoFactorAuth } from "../src/autenticacao/dominio/two-factor-auth";
+import { FAST_SCRYPT, TOTP_SECRET } from "./helpers";
 
 describe("TOTP (RFC 6238)", () => {
     // Apêndice B da RFC 6238, coluna SHA-1, 8 dígitos, segredo "12345678901234567890".

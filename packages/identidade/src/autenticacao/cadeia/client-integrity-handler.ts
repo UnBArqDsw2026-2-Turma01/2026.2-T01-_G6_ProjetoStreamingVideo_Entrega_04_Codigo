@@ -1,6 +1,6 @@
-import { verifyProofOfWork } from "../dominio/client-integrity-attestation.ts";
-import type { AuthenticationContext, AuthenticationOutcome } from "./authentication-context.ts";
-import { AbstractAuthenticationHandler } from "./authentication-handler.ts";
+import { verifyProofOfWork } from "../dominio/client-integrity-attestation";
+import type { AuthenticationContext, AuthenticationOutcome } from "./authentication-context";
+import { AbstractAuthenticationHandler } from "./authentication-handler";
 
 export interface ClientIntegrityOptions {
     readonly minDifficulty: number;

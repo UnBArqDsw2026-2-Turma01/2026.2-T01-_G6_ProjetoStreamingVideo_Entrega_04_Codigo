@@ -1,10 +1,10 @@
-import { AccountStatus } from "../dominio/account.ts";
+import { AccountStatus } from "../dominio/account";
 import type {
     AuthenticationContext,
     AuthenticationOutcome,
     RejectionReason,
-} from "./authentication-context.ts";
-import { AbstractAuthenticationHandler } from "./authentication-handler.ts";
+} from "./authentication-context";
+import { AbstractAuthenticationHandler } from "./authentication-handler";
 
 const BLOCKED: Readonly<Record<string, { reason: RejectionReason; detail: string }>> = {
     [AccountStatus.SUSPENDED]: {

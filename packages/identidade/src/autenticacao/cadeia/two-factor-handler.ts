@@ -1,5 +1,5 @@
-import type { AuthenticationContext, AuthenticationOutcome } from "./authentication-context.ts";
-import { AbstractAuthenticationHandler } from "./authentication-handler.ts";
+import type { AuthenticationContext, AuthenticationOutcome } from "./authentication-context";
+import { AbstractAuthenticationHandler } from "./authentication-handler";
 
 export interface TwoFactorOptions {
     /** Exige o segundo fator de qualquer conta, como na cadeia de step-up. */

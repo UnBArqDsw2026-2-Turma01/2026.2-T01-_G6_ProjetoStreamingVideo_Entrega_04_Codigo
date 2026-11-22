@@ -1,6 +1,6 @@
-import type { LeakedPasswordBloomFilter } from "../dominio/leaked-password-bloom-filter.ts";
-import type { AuthenticationContext, AuthenticationOutcome } from "./authentication-context.ts";
-import { AbstractAuthenticationHandler } from "./authentication-handler.ts";
+import type { LeakedPasswordBloomFilter } from "../dominio/leaked-password-bloom-filter";
+import type { AuthenticationContext, AuthenticationOutcome } from "./authentication-context";
+import { AbstractAuthenticationHandler } from "./authentication-handler";
 
 /**
  * ConcreteHandler — senha presente em lista de vazamentos (DE02 da Entrega 02).

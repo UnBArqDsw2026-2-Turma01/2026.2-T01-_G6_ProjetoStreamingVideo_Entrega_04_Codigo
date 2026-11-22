@@ -1,7 +1,7 @@
-import type { Account } from "../dominio/account.ts";
-import type { ClientIntegrityAttestation } from "../dominio/client-integrity-attestation.ts";
-import type { Session } from "../dominio/session.ts";
-import type { StepUpAuthChallenge } from "../dominio/step-up-auth-challenge.ts";
+import type { Account } from "../dominio/account";
+import type { ClientIntegrityAttestation } from "../dominio/client-integrity-attestation";
+import type { Session } from "../dominio/session";
+import type { StepUpAuthChallenge } from "../dominio/step-up-auth-challenge";
 
 /** A requisição que percorre a cadeia (o `request` do GoF). */
 export interface AuthenticationRequest {

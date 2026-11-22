@@ -1,19 +1,19 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { AccountStatus, InMemoryAccountRepository } from "../src/autenticacao/dominio/account.ts";
-import { LeakedPasswordBloomFilter } from "../src/autenticacao/dominio/leaked-password-bloom-filter.ts";
-import { LoginRateLimiter } from "../src/autenticacao/dominio/login-rate-limiter.ts";
-import { HmacTokenService, InMemorySessionStore } from "../src/autenticacao/dominio/session.ts";
-import { StepUpAuthChallenge } from "../src/autenticacao/dominio/step-up-auth-challenge.ts";
-import { generateTotp } from "../src/autenticacao/dominio/two-factor-auth.ts";
-import { AccountStatusHandler } from "../src/autenticacao/cadeia/account-status-handler.ts";
-import { ClientIntegrityHandler } from "../src/autenticacao/cadeia/client-integrity-handler.ts";
-import { LeakedPasswordHandler } from "../src/autenticacao/cadeia/leaked-password-handler.ts";
-import { PasswordHandler } from "../src/autenticacao/cadeia/password-handler.ts";
-import { RateLimitHandler } from "../src/autenticacao/cadeia/rate-limit-handler.ts";
-import { SessionIssuerHandler } from "../src/autenticacao/cadeia/session-issuer-handler.ts";
-import { StepUpGrantHandler } from "../src/autenticacao/cadeia/step-up-grant-handler.ts";
-import { TwoFactorHandler } from "../src/autenticacao/cadeia/two-factor-handler.ts";
+import { AccountStatus, InMemoryAccountRepository } from "../src/autenticacao/dominio/account";
+import { LeakedPasswordBloomFilter } from "../src/autenticacao/dominio/leaked-password-bloom-filter";
+import { LoginRateLimiter } from "../src/autenticacao/dominio/login-rate-limiter";
+import { HmacTokenService, InMemorySessionStore } from "../src/autenticacao/dominio/session";
+import { StepUpAuthChallenge } from "../src/autenticacao/dominio/step-up-auth-challenge";
+import { generateTotp } from "../src/autenticacao/dominio/two-factor-auth";
+import { AccountStatusHandler } from "../src/autenticacao/cadeia/account-status-handler";
+import { ClientIntegrityHandler } from "../src/autenticacao/cadeia/client-integrity-handler";
+import { LeakedPasswordHandler } from "../src/autenticacao/cadeia/leaked-password-handler";
+import { PasswordHandler } from "../src/autenticacao/cadeia/password-handler";
+import { RateLimitHandler } from "../src/autenticacao/cadeia/rate-limit-handler";
+import { SessionIssuerHandler } from "../src/autenticacao/cadeia/session-issuer-handler";
+import { StepUpGrantHandler } from "../src/autenticacao/cadeia/step-up-grant-handler";
+import { TwoFactorHandler } from "../src/autenticacao/cadeia/two-factor-handler";
 import {
     attestation,
     context,
@@ -24,7 +24,7 @@ import {
     NOW,
     SpyHandler,
     TOTP_SECRET,
-} from "./helpers.ts";
+} from "./helpers";
 
 const integrity = { minDifficulty: DIFFICULTY, maxAgeMs: 60_000 };
 

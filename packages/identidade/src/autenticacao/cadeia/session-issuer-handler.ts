@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { type HmacTokenService, Session, type SessionStore } from "../dominio/session.ts";
-import type { AuthenticationContext, AuthenticationOutcome } from "./authentication-context.ts";
-import { AbstractAuthenticationHandler } from "./authentication-handler.ts";
+import { type HmacTokenService, Session, type SessionStore } from "../dominio/session";
+import type { AuthenticationContext, AuthenticationOutcome } from "./authentication-context";
+import { AbstractAuthenticationHandler } from "./authentication-handler";
 
 export interface SessionIssuerOptions {
     readonly ttlMs: number;

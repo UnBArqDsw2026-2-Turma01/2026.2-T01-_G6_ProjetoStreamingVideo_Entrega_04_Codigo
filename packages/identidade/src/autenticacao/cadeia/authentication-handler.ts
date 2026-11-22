@@ -1,4 +1,4 @@
-import type { AuthenticationContext, AuthenticationOutcome } from "./authentication-context.ts";
+import type { AuthenticationContext, AuthenticationOutcome } from "./authentication-context";
 
 /** Participante **Handler** do GoF: define a interface de tratamento e o encadeamento. */
 export interface AuthenticationHandler {

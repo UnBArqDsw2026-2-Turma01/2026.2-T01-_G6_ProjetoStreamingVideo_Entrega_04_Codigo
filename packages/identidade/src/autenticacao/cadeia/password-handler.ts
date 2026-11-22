@@ -1,7 +1,7 @@
-import type { AccountRepository } from "../dominio/account.ts";
-import { Credential, OWASP_SCRYPT_PARAMS, type ScryptParams } from "../dominio/credential.ts";
-import type { AuthenticationContext, AuthenticationOutcome } from "./authentication-context.ts";
-import { AbstractAuthenticationHandler } from "./authentication-handler.ts";
+import type { AccountRepository } from "../dominio/account";
+import { Credential, OWASP_SCRYPT_PARAMS, type ScryptParams } from "../dominio/credential";
+import type { AuthenticationContext, AuthenticationOutcome } from "./authentication-context";
+import { AbstractAuthenticationHandler } from "./authentication-handler";
 
 const GENERIC_DETAIL = "e-mail ou senha incorretos";
 

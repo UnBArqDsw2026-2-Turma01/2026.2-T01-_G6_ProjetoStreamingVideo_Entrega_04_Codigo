@@ -1,16 +1,16 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { AccountStatus } from "../src/autenticacao/dominio/account.ts";
-import { InMemoryAuditLogger } from "../src/autenticacao/dominio/audit-log.ts";
-import { StepUpAuthChallenge } from "../src/autenticacao/dominio/step-up-auth-challenge.ts";
-import { generateTotp } from "../src/autenticacao/dominio/two-factor-auth.ts";
+import { AccountStatus } from "../src/autenticacao/dominio/account";
+import { InMemoryAuditLogger } from "../src/autenticacao/dominio/audit-log";
+import { StepUpAuthChallenge } from "../src/autenticacao/dominio/step-up-auth-challenge";
+import { generateTotp } from "../src/autenticacao/dominio/two-factor-auth";
 import {
     buildLoginChain,
     buildStepUpChain,
     describeChain,
-} from "../src/autenticacao/cadeia/authentication-chains.ts";
-import { LoginService } from "../src/autenticacao/login-service.ts";
-import { context, loginRequest, makeAccount, makeDeps, NOW, TOTP_SECRET } from "./helpers.ts";
+} from "../src/autenticacao/cadeia/authentication-chains";
+import { LoginService } from "../src/autenticacao/login-service";
+import { context, loginRequest, makeAccount, makeDeps, NOW, TOTP_SECRET } from "./helpers";
 
 const LOGIN_ORDER = [
     "RateLimitHandler",

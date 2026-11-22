@@ -1,10 +1,10 @@
-import { type AuditLogger, SecurityEventType } from "./dominio/audit-log.ts";
+import { type AuditLogger, SecurityEventType } from "./dominio/audit-log";
 import {
     AuthenticationContext,
     type AuthenticationOutcome,
     type AuthenticationRequest,
-} from "./cadeia/authentication-context.ts";
-import type { AuthenticationHandler } from "./cadeia/authentication-handler.ts";
+} from "./cadeia/authentication-context";
+import type { AuthenticationHandler } from "./cadeia/authentication-handler";
 
 export interface LoginServiceDependencies {
     readonly loginChain: AuthenticationHandler;

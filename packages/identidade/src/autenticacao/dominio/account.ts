@@ -1,5 +1,5 @@
-import type { Credential } from "./credential.ts";
-import type { TwoFactorAuth } from "./two-factor-auth.ts";
+import type { Credential } from "./credential";
+import type { TwoFactorAuth } from "./two-factor-auth";
 
 /** Mesmos valores do enum `AccountStatus` do diagrama da Entrega 02. */
 export const AccountStatus = {
