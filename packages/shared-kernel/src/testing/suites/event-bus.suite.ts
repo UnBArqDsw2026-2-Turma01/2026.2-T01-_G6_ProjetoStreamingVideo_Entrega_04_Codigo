@@ -46,5 +46,41 @@ export function casosEventBus(criarSut: () => EventBus) {
         assert.equal(chamadas, 1);
       },
     },
+    {
+      nome: 'Deve entregar eventos publicados durante o tratamento depois do evento atual',
+      executar: () => {
+        const sut = criarSut();
+        const entregas: string[] = [];
+        const evento = (id: string): EventoDominio => ({ tipo: 'LiveIniciada', live: liveId(id), canal: canalId('c'), em: new Date() });
+
+        sut.assinar('LiveIniciada', (e) => {
+          entregas.push(`a:${e.live}`);
+          if (e.live === '1') sut.publicar(evento('2'));
+        });
+        sut.assinar('LiveIniciada', (e) => entregas.push(`b:${e.live}`));
+
+        sut.publicar(evento('1'));
+        assert.deepEqual(entregas, ['a:1', 'b:1', 'a:2', 'b:2']);
+      },
+    },
+    {
+      nome: 'Deve entregar aos demais assinantes mesmo quando um tratador falha',
+      executar: () => {
+        const sut = criarSut();
+        const entregas: string[] = [];
+        const evento = (id: string): EventoDominio => ({ tipo: 'LiveIniciada', live: liveId(id), canal: canalId('c'), em: new Date() });
+
+        sut.assinar('LiveIniciada', (e) => {
+          if (e.live === '1') {
+            sut.publicar(evento('2'));
+            throw new Error('falha no tratador');
+          }
+        });
+        sut.assinar('LiveIniciada', (e) => entregas.push(`b:${e.live}`));
+
+        assert.throws(() => sut.publicar(evento('1')));
+        assert.deepEqual(entregas, ['b:1', 'b:2']);
+      },
+    },
   ];
 }
