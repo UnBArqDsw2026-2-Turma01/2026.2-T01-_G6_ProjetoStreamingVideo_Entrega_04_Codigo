@@ -1,0 +1,97 @@
+{
+  "ambiente": {
+    "executadoEm": "2026-11-22T02:13:50.628Z",
+    "nodeVersao": "v24.18.1",
+    "plataforma": "linux",
+    "release": "7.3.4-1-cachyos",
+    "arquitetura": "x64",
+    "cpuModelo": "13th Gen Intel(R) Core(TM) i7-13620H",
+    "cpusLogicos": 16,
+    "memoriaTotalMB": 23726,
+    "comando": "npx tsx bench/ca01-benchmark.ts",
+    "composicao": {
+      "reais": [
+        "@g6/shared-kernel (EventBusEmMemoria)",
+        "@g6/transmissao (criarConfiguracao)",
+        "@g6/conteudo (ConteudoDeLive)",
+        "apps/web (ServicoCA01)"
+      ],
+      "fakes": [
+        "FakeAutenticacao",
+        "FakeTransmissao",
+        "RecargaDemo",
+        "FakeDoacao",
+        "FakeChat",
+        "FakeModeracao"
+      ]
+    }
+  },
+  "ca01PontaAPonta": {
+    "repeticoes": 1000,
+    "aquecimentoDescartado": 100,
+    "minMs": 0.0089,
+    "p50Ms": 0.0245,
+    "p95Ms": 0.0709,
+    "p99Ms": 0.1892,
+    "maxMs": 1.7402,
+    "mediaMs": 0.0346
+  },
+  "chatComNInscritos": [
+    {
+      "inscritos": 10,
+      "estatisticas": {
+        "repeticoes": 300,
+        "aquecimentoDescartado": 50,
+        "minMs": 0.0027,
+        "p50Ms": 0.0038,
+        "p95Ms": 0.0105,
+        "p99Ms": 0.0434,
+        "maxMs": 0.5035,
+        "mediaMs": 0.007
+      },
+      "entregasPorSegundoP50": 2631579
+    },
+    {
+      "inscritos": 100,
+      "estatisticas": {
+        "repeticoes": 300,
+        "aquecimentoDescartado": 50,
+        "minMs": 0.0029,
+        "p50Ms": 0.0045,
+        "p95Ms": 0.0075,
+        "p99Ms": 0.0119,
+        "maxMs": 0.0328,
+        "mediaMs": 0.0051
+      },
+      "entregasPorSegundoP50": 22222222
+    },
+    {
+      "inscritos": 1000,
+      "estatisticas": {
+        "repeticoes": 300,
+        "aquecimentoDescartado": 50,
+        "minMs": 0.0151,
+        "p50Ms": 0.025,
+        "p95Ms": 0.0599,
+        "p99Ms": 0.4261,
+        "maxMs": 0.7593,
+        "mediaMs": 0.0358
+      },
+      "entregasPorSegundoP50": 40000000
+    },
+    {
+      "inscritos": 5000,
+      "estatisticas": {
+        "repeticoes": 300,
+        "aquecimentoDescartado": 50,
+        "minMs": 0.0197,
+        "p50Ms": 0.0304,
+        "p95Ms": 0.0466,
+        "p99Ms": 0.0496,
+        "maxMs": 0.0566,
+        "mediaMs": 0.0315
+      },
+      "entregasPorSegundoP50": 164473684
+    }
+  ]
+}
