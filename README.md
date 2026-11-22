@@ -37,6 +37,8 @@ Cada pacote mantém o executor de testes do código de origem na Entrega 03 (Vit
 
 Node.js **22 ou superior** (exigido pelo código da SubEquipe_01) e npm.
 
+Para containers locais: [Docker](https://docs.docker.com/get-docker/) com Compose v2.
+
 ## Comandos
 
 ```bash
@@ -49,6 +51,28 @@ npm run web          # página integrada (apps/web)
 
 npm test -w @g6/chat # só um pacote
 ```
+
+## Docker (local)
+
+Sobe o monorepo em um container Node 22, com o código montado em volume. Não há bancos: só o ambiente das apps.
+
+```bash
+cp .env.example .env
+docker compose up -d --build dev          # ambiente persistente (porta 3000 reservada)
+docker compose exec dev node -v           # deve ser v22.x
+docker compose exec dev npm run demo      # CA-01 no terminal
+docker compose --profile check run --rm check
+docker compose --profile web run --rm web
+docker compose --profile demo run --rm demo
+docker compose down
+```
+
+| Serviço | Perfil | Comando |
+| --- | --- | --- |
+| `dev` | (padrão) | keep-alive; use `exec` para rodar npm |
+| `demo` | `demo` | `npm run demo` (one-shot) |
+| `web` | `web` | `npm run web` (one-shot até a #16) |
+| `check` | `check` | `npm run check` (one-shot) |
 
 ## Regras em uma linha cada
 
