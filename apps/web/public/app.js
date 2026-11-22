@@ -119,7 +119,11 @@ async function carregarOfertas() {
 async function carregarMeios() {
   if (estado.meios) return;
   estado.meios = await api('GET', '/api/recarga/meios');
-  if (!estado.meios.includes(estado.meio)) estado.meio = estado.meios[0];
+  // Processadores reais primeiro, simulado por último
+  estado.meios.sort((a, b) => (a === 'simulado' ? 1 : b === 'simulado' ? -1 : 0));
+  if (!estado.meios.includes(estado.meio) || (estado.meios.length > 1 && estado.meio === 'simulado')) {
+    estado.meio = estado.meios[0];
+  }
   const caixa = $('#meios');
   const secao = $('#secao-meios');
   if (secao) secao.hidden = !estado.meios || estado.meios.length === 0;

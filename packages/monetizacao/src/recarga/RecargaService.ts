@@ -92,9 +92,12 @@ export class RecargaService implements RecargaPort {
     this.segredos = dependencias.segredos;
   }
 
-  /** Meios de pagamento disponíveis no momento. */
+  /** Meios de pagamento disponíveis no momento (reais primeiro, simulado por último). */
   meios(): MeioPagamento[] {
-    return [...this.gatewayDoMeio.keys()];
+    const lista = [...this.gatewayDoMeio.keys()];
+    const reais = lista.filter((m) => m !== "simulado");
+    const simulados = lista.filter((m) => m === "simulado");
+    return [...reais, ...simulados];
   }
 
   async ofertas(sessao: Sessao): Promise<Resultado<OfertaRecarga[]>> {
