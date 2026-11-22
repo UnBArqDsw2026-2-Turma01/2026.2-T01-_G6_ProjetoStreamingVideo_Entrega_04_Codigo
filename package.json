@@ -16,7 +16,8 @@
     "test": "npm test --workspaces --if-present",
     "check": "npm run typecheck && npm test",
     "demo": "npm start -w @g6/cli-demo",
-    "web": "npm start -w @g6/web"
+    "web": "npm start -w @g6/web",
+    "qualidade": "node --import tsx tests/qualidade/verificar-dependencias.mjs && tsc -p tests/qualidade/tsconfig.json && node --import tsx --test tests/qualidade/cenarios.test.ts"
   },
   "devDependencies": {
     "typescript": "^7.0.2",
