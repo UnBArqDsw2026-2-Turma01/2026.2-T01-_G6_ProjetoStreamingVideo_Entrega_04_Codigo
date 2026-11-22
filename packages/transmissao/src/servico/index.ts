@@ -1,4 +1,2 @@
-// transmissao/servico — dono definido na #8.
-// Ponto de entrada público do pacote: exporte aqui só o que outros módulos podem usar.
-// Implementação: #8.
-export {};
+// transmissao/servico — TransmissaoService, que liga configuração (Builder) e canal (Observer).
+export { TransmissaoService, type TransmissaoServiceOpcoes } from './TransmissaoService';
