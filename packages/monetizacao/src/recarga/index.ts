@@ -8,4 +8,11 @@ export * from "./preco";
 export * from "./pagamento";
 export * from "./confirmacao";
 export { RecargaService, type DependenciasRecargaService } from "./RecargaService";
-export { gatewaysDoAmbiente, type GatewaysDoAmbiente, type VariaveisPagamento, type VerificarContaMercadoPago } from "./gatewaysDoAmbiente";
+export {
+  gatewaysDoAmbiente,
+  gatewaySimulado,
+  type GatewaysDoAmbiente,
+  type VariaveisPagamento,
+  type VerificarContaMercadoPago,
+} from "./gatewaysDoAmbiente";
+export { criarRecargaDoApp, type AppRecarga } from "./app";

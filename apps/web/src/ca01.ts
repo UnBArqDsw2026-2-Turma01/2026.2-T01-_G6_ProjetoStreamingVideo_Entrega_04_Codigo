@@ -1,12 +1,11 @@
 // Composition root provisório e casos de uso do CA-01 (live com doação destacada).
 //
-// Liga os ports do shared-kernel a implementações. Hoje só há fakes (kit de testes do
-// shared-kernel); conforme os pacotes reais entrarem na main (#5 identidade, #8 transmissão,
-// #9 conteudo, #11 doação, #13 chat, #14 moderação), troca-se a linha correspondente em `compor()`.
+// Liga os ports do shared-kernel a implementações. A recarga já é a real (`@g6/monetizacao`,
+// com o simulado e, se houver credenciais de teste no `.env`, Mercado Pago e Stripe); os demais
+// ports ainda usam fakes do kit de testes do shared-kernel e são trocados em `compor()`.
 // Nada fora deste arquivo conhece as implementações: as rotas só falam com `ServicoCA01`.
 import {
   EventBusEmMemoria,
-  pacoteId,
   usuarioId,
   type AutenticacaoPort,
   type CanalId,
@@ -15,7 +14,6 @@ import {
   type ComprovanteDoacao,
   type DoacaoPort,
   type ErroDominio,
-  type ErroRecarga,
   type EventBus,
   type LiveId,
   type LiveResumo,
@@ -40,9 +38,9 @@ import {
   FakeChat,
   FakeDoacao,
   FakeModeracao,
-  FakeRecarga,
   FakeTransmissao,
 } from '@g6/shared-kernel/testing';
+import { criarRecargaDoApp, gatewaySimulado, type GatewaysDoAmbiente } from '@g6/monetizacao';
 
 export interface Portas {
   readonly autenticacao: AutenticacaoPort;
@@ -82,51 +80,14 @@ function montarDestaque(valor: MoedaVirtual, texto: string, base: MensagemChat):
   return { ok: true, valor: { ...base, valor, cor: faixa.cor, tempoFixacaoMin: faixa.fixacaoMin } };
 }
 
-// PROVISÓRIO: espelha o catálogo do RecargaService real (#10: PACOTES e CONFIGURACAO_PRECO, com 5% de
-// imposto). O pacote só exporta `RecargaService`, que ainda não dá para instanciar fora dele: quando houver
-// uma fábrica exportada no index de `@g6/monetizacao`, apague esta tabela e a classe `RecargaDemo`.
-const CATALOGO = [
-  { reais: 5, bonus: 0, desconto: 5 },
-  { reais: 10, bonus: 5, desconto: 8 },
-  { reais: 30, bonus: 10, desconto: 12 },
-  { reais: 50, bonus: 15, desconto: 16 },
-  { reais: 100, bonus: 20, desconto: 20 },
-  { reais: 300, bonus: 25, desconto: 25 },
-  { reais: 500, bonus: 30, desconto: 29 },
-  { reais: 1000, bonus: 40, desconto: 33 },
-];
-const IMPOSTO = 5;
-
-const OFERTAS: OfertaRecarga[] = CATALOGO.map(({ reais, bonus, desconto }) => ({
-  pacote: pacoteId(`p${reais}`),
-  moeda: Math.round(reais * 20 * (1 + bonus / 100)),
-  precoSemDescontoCentavos: Math.round(reais * 100 * (1 + IMPOSTO / 100)),
-  precoCentavos: Math.round(reais * 100 * (1 - desconto / 100) * (1 + IMPOSTO / 100)),
-  descontoPercentual: desconto,
-  composicao: `pacote de R$ ${reais},00 → desconto de ${desconto}% → imposto de ${IMPOSTO}%`,
-}));
-
-class RecargaDemo extends FakeRecarga {
-  constructor() {
-    super();
-    this.ofertasDisponiveis = OFERTAS;
-  }
-
-  override async recarregar(sessao: Sessao, pacote: PacoteId, meio: MeioPagamento): Promise<Resultado<CheckoutPendente, ErroRecarga>> {
-    const oferta = OFERTAS.find((o) => o.pacote === pacote);
-    if (!oferta) return { ok: false, erro: { codigo: 'PACOTE_INVALIDO', mensagem: 'Pacote inexistente' } };
-    const recargaId = `rec_${Math.random().toString(36).slice(2, 9)}`;
-    const checkout: CheckoutPendente = {
-      recargaId,
-      pacote,
-      meio,
-      valorCobradoCentavos: oferta.precoCentavos,
-      moedaACreditar: oferta.moeda,
-      instrucoes: meio === 'simulado' ? 'Confirmar pagamento simulado' : `https://checkout.fake/${recargaId}`,
-    };
-    this.recargas.set(recargaId, { usuarioId: sessao.usuarioId, situacao: { situacao: 'pendente', checkout } });
-    return { ok: true, valor: checkout };
-  }
+/** O que o CA-01 usa da recarga além do port: carteira, meios e verificação do pagamento. */
+export interface PagamentoRecarga {
+  /** Meios oferecidos nesta execução (o simulado e os reais conectados). */
+  meios(): MeioPagamento[];
+  /** Cria a carteira do usuário na recarga na primeira vez que ele a usa. */
+  garantirCarteira(usuario: UsuarioId): void;
+  /** Consulta o processador e, se aprovado, credita (e publica `RecargaConcluida`). */
+  verificar(sessao: Sessao, recargaId: string): Promise<Resultado<SituacaoRecarga>>;
 }
 
 export class ServicoCA01 {
@@ -138,7 +99,7 @@ export class ServicoCA01 {
   constructor(
     readonly portas: Portas,
     readonly bus: EventBus,
-    private readonly confirmarPagamento: (recargaId: string) => void,
+    private readonly pagamento: PagamentoRecarga,
   ) {
     // RecargaConcluida é o aviso de que o crédito entrou (o port só devolve o checkout pendente).
     bus.assinar('RecargaConcluida', (e) => this.creditar(e.usuario, e.moeda));
@@ -188,28 +149,27 @@ export class ServicoCA01 {
   }
 
   // ---- recarga ----
+  meiosPagamento(): MeioPagamento[] {
+    return this.pagamento.meios();
+  }
+
   ofertas(sessao: Sessao): Promise<Resultado<OfertaRecarga[]>> {
+    this.pagamento.garantirCarteira(sessao.usuarioId);
     return this.portas.recarga.ofertas(sessao);
   }
 
   recarregar(sessao: Sessao, pacote: PacoteId, meio: MeioPagamento): Promise<Resultado<CheckoutPendente, ErroDominio>> {
+    this.pagamento.garantirCarteira(sessao.usuarioId);
     return this.portas.recarga.recarregar(sessao, pacote, meio);
   }
 
-  /** Simula o aviso do gateway de pagamento: confirma a recarga e deixa o EventBus notificar. */
-  async confirmarRecarga(sessao: Sessao, recargaId: string): Promise<Resultado<SituacaoRecarga>> {
-    const antes = await this.portas.recarga.consultar(sessao, recargaId);
-    if (!antes.ok) return antes;
-    if (antes.valor.situacao === 'pendente') {
-      this.confirmarPagamento(recargaId);
-      const depois = await this.portas.recarga.consultar(sessao, recargaId);
-      if (depois.ok && depois.valor.situacao === 'concluida') {
-        const { recibo } = depois.valor;
-        this.bus.publicar({ tipo: 'RecargaConcluida', recargaId, usuario: sessao.usuarioId, moeda: recibo.moedaCreditada, em: recibo.em });
-      }
-      return depois;
-    }
-    return antes;
+  /**
+   * Verifica o pagamento da recarga. No simulado, "paga" e credita na hora; no Mercado Pago e
+   * no Stripe, consulta o processador e só credita quando ele aprovar. Quem publica
+   * `RecargaConcluida` é a recarga, depois que o aviso passa pelo Proxy.
+   */
+  confirmarRecarga(sessao: Sessao, recargaId: string): Promise<Resultado<SituacaoRecarga>> {
+    return this.pagamento.verificar(sessao, recargaId);
   }
 
   saldo(usuario: UsuarioId): number {
@@ -271,17 +231,24 @@ export class ServicoCA01 {
   }
 }
 
-/** Composition root: instancia o EventBus e as implementações e injeta os ports. */
-export function compor(): ServicoCA01 {
+/**
+ * Composition root: instancia o EventBus e as implementações e injeta os ports.
+ * `pagamentos` vem de `gatewaysDoAmbiente(process.env)` no servidor; sem ele (testes), só o simulado.
+ */
+export function compor(pagamentos: GatewaysDoAmbiente = gatewaySimulado()): ServicoCA01 {
   const bus = new EventBusEmMemoria();
-  const recarga = new RecargaDemo();
+  const recarga = criarRecargaDoApp(pagamentos, bus);
   const portas: Portas = {
     autenticacao: new FakeAutenticacao(),
     transmissao: new FakeTransmissao(),
-    recarga,
+    recarga: recarga.servico,
     doacao: new FakeDoacao(),
     chat: new FakeChat(),
     moderacao: new FakeModeracao(),
   };
-  return new ServicoCA01(portas, bus, (id) => recarga.confirmar(id));
+  return new ServicoCA01(portas, bus, {
+    meios: () => recarga.servico.meios(),
+    garantirCarteira: (usuario) => recarga.garantirUsuario(usuario),
+    verificar: (sessao, recargaId) => recarga.servico.verificarPagamento(sessao, recargaId),
+  });
 }

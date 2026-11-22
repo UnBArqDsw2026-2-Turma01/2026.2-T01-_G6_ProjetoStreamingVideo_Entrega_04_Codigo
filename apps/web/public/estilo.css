@@ -330,3 +330,11 @@ dialog::backdrop { background: rgb(0 0 0 / 0.6); }
 .marcas i { width: 4px; height: 4px; margin-top: -2px; border-radius: 50%; background: #ffffff80; }
 .saldo-doacao { margin: 0; text-align: center; color: var(--texto-suave); font-size: var(--texto-m); }
 .erro-doacao { margin: 0; text-align: center; color: var(--erro); font-size: var(--texto-m); }
+
+/* Meio de pagamento da recarga (simulado, Mercado Pago, Stripe) */
+.meios { display: flex; flex-wrap: wrap; gap: var(--espaco-2); margin-bottom: var(--espaco-3); }
+.meios label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--borda); border-radius: var(--raio-m); cursor: pointer; }
+.meios input { margin: 0; }
+#checkout-externo { display: flex; flex-direction: column; gap: var(--espaco-2); margin: 0; }
+#checkout-externo .botao { align-self: flex-start; display: inline-block; padding: 8px 14px; border-radius: var(--raio-m); background: var(--acento); color: var(--texto-sobre-cor); font-weight: 500; text-decoration: none; }
+#checkout-externo .botao:hover { filter: brightness(1.1); }

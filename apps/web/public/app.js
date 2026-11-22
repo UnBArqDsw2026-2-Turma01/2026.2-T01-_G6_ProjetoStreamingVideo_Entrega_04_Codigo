@@ -1,6 +1,7 @@
 // Front-end do CA-01: só fala com a API HTTP (/api/*). Sem dependências nem build.
 const $ = (seletor) => document.querySelector(seletor);
-const estado = { token: null, papel: null, live: null, checkout: null, fonte: null };
+const estado = { token: null, papel: null, live: null, checkout: null, fonte: null, meio: 'simulado', meios: null };
+const NOME_DO_MEIO = { simulado: 'Simulado', mercadopago: 'Mercado Pago', stripe: 'Stripe' };
 
 function avisar(texto, ok = false) {
   const el = $('#aviso');
@@ -76,6 +77,7 @@ const imposto = (o) => /imposto de (\d+(?:[.,]\d+)?)%/.exec(o.composicao)?.[1];
 
 async function carregarOfertas() {
   if (!estado.token) return; // qualquer conta logada recarrega (o criador também doa em outras lives)
+  await carregarMeios();
   const [saldo, ofertas] = await Promise.all([api('GET', '/api/saldo'), api('GET', '/api/recarga/ofertas')]);
   $('#saldo').textContent = saldo.moeda.toLocaleString('pt-BR');
   $('#saldo-doacao').textContent = saldo.moeda.toLocaleString('pt-BR');
@@ -101,20 +103,75 @@ async function carregarOfertas() {
       <span class="preco"><span>R$</span> ${(o.precoCentavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
       ${taxa ? `<small>(Imposto de ${taxa}% incluso)</small>` : ''}`;
     botao.addEventListener('click', () => tentar(async () => {
-      estado.checkout = await api('POST', '/api/recarga', { pacote: o.pacote, meio: 'simulado' });
+      estado.checkout = await api('POST', '/api/recarga', { pacote: o.pacote, meio: estado.meio });
       caixa.querySelectorAll('.pacote').forEach((p) => p.classList.toggle('selecionado', p === botao));
-      $('#checkout').hidden = false;
-      $('#checkout-texto').innerHTML = `${estado.checkout.moedaACreditar.toLocaleString('pt-BR')} ${ESTRELA} por ${reais(estado.checkout.valorCobradoCentavos)}`;
+      mostrarCheckout();
+      // O07: com o meio escolhido fora do ar e um único outro disponível, a recarga troca de meio.
+      if (estado.checkout.meio !== estado.meio) {
+        avisar(`O ${NOME_DO_MEIO[estado.meio]} está indisponível; o pedido foi para o ${NOME_DO_MEIO[estado.checkout.meio]}, o único meio disponível agora.`);
+      }
     }));
     return botao;
   }));
 }
 
+// Meios de pagamento: o servidor só lista os conectados (o simulado sempre; Mercado Pago e Stripe com o .env).
+async function carregarMeios() {
+  if (estado.meios) return;
+  estado.meios = await api('GET', '/api/recarga/meios');
+  if (!estado.meios.includes(estado.meio)) estado.meio = estado.meios[0];
+  const caixa = $('#meios');
+  caixa.hidden = estado.meios.length < 2;
+  caixa.replaceChildren(...estado.meios.map((meio) => {
+    const rotulo = document.createElement('label');
+    const opcao = document.createElement('input');
+    opcao.type = 'radio';
+    opcao.name = 'meio';
+    opcao.value = meio;
+    opcao.checked = meio === estado.meio;
+    opcao.addEventListener('change', () => { estado.meio = meio; });
+    rotulo.append(opcao, NOME_DO_MEIO[meio] ?? meio);
+    return rotulo;
+  }));
+}
+
+function mostrarCheckout() {
+  const c = estado.checkout;
+  $('#checkout').hidden = false;
+  $('#checkout-texto').innerHTML = `${c.moedaACreditar.toLocaleString('pt-BR')} ${ESTRELA} por ${reais(c.valorCobradoCentavos)} no ${NOME_DO_MEIO[c.meio] ?? c.meio}`;
+  const simulado = c.meio === 'simulado';
+  $('#confirmar').hidden = !simulado;
+  $('#checkout-externo').hidden = simulado;
+  if (!simulado) {
+    const link = $('#link-pagamento');
+    link.href = c.instrucoes;
+    link.textContent = `Pagar no ${NOME_DO_MEIO[c.meio] ?? c.meio}`;
+  }
+}
+
+function encerrarCheckout() {
+  estado.checkout = null;
+  $('#checkout').hidden = true;
+}
+
+// Processador real: consulta enquanto a recarga está pendente (o processador não alcança o localhost por webhook).
+async function verificarPagamentoReal() {
+  const c = estado.checkout;
+  if (!c || c.meio === 'simulado') return;
+  const situacao = await api('POST', `/api/recarga/${c.recargaId}/confirmar`);
+  if (situacao.situacao === 'concluida') {
+    encerrarCheckout();
+    avisar(`Pagamento confirmado pelo ${NOME_DO_MEIO[c.meio]}: moedas creditadas`, true);
+  } else if (situacao.situacao === 'cancelada') {
+    encerrarCheckout();
+    avisar(`Recarga cancelada: ${situacao.motivo}`);
+  }
+}
+
 $('#confirmar').addEventListener('click', () =>
   tentar(async () => {
     await api('POST', `/api/recarga/${estado.checkout.recargaId}/confirmar`);
-    estado.checkout = null;
-    $('#checkout').hidden = true;
+    encerrarCheckout();
     await carregarOfertas();
   }, 'Pagamento confirmado: moedas creditadas'));
 
@@ -354,6 +411,7 @@ async function atualizar() {
     return item;
   }));
   await carregarOfertas();
+  await verificarPagamentoReal().catch((e) => avisar(e.message));
 }
 
 prepararFaixas().catch((e) => avisar(e.message));

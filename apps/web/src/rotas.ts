@@ -32,6 +32,8 @@ const STATUS_POR_CODIGO: Record<string, number> = {
   ACESSO_NEGADO: 403,
   NAO_ENCONTRADA: 404,
   RECARGA_NAO_ENCONTRADA: 404,
+  RECARGA_INEXISTENTE: 404,
+  PROCESSADOR_INDISPONIVEL: 502,
   SALDO_INSUFICIENTE: 409,
   LIVE_ENCERRADA: 409,
 };
@@ -82,13 +84,26 @@ export function registrarRotasCA01(app: App, ctx: Contexto): void {
 
   // Recarga
   app.rota('GET', '/api/saldo', comSessao((sessao) => ok({ moeda: servico.saldo(sessao.usuarioId) })));
+  app.rota('GET', '/api/recarga/meios', () => ok(servico.meiosPagamento()));
   app.rota('GET', '/api/recarga/ofertas', comSessao(async (sessao) => deResultado(await servico.ofertas(sessao))));
   app.rota('POST', '/api/recarga', comSessao(async (sessao, req) => {
     const pacote = texto(req.corpo, 'pacote');
-    const meio = (texto(req.corpo, 'meio') ?? 'simulado') as MeioPagamento;
+    const meio = texto(req.corpo, 'meio') ?? 'simulado';
     if (!pacote) return erro(400, 'ENTRADA_INVALIDA', 'Informe o pacote');
-    return deResultado(await servico.recarregar(sessao, pacote as PacoteId, meio));
+    if (!['simulado', 'mercadopago', 'stripe'].includes(meio)) {
+      return erro(400, 'ENTRADA_INVALIDA', 'Meio de pagamento inválido (simulado, mercadopago ou stripe)');
+    }
+    return deResultado(await servico.recarregar(sessao, pacote as PacoteId, meio as MeioPagamento));
   }));
+  // Retorno do checkout do Stripe (success_url): a aba do pagamento mostra um aviso e pode ser fechada.
+  app.rota('GET', '/recarga/concluida', () => ({
+    fluxo: (res) => {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      res.end('<!doctype html><meta charset="utf-8"><title>Pagamento enviado</title>'
+        + '<p style="font-family:sans-serif">Pagamento enviado. Volte à aba do CA-01: o saldo é atualizado quando o processador confirmar.</p>');
+    },
+  }));
+  // Verifica o pagamento: no simulado, paga na hora; nos reais, a página chama enquanto a recarga está pendente.
   app.rota('POST', '/api/recarga/:id/confirmar', comSessao(async (sessao, req) =>
     deResultado(await servico.confirmarRecarga(sessao, req.params.id!))));
 

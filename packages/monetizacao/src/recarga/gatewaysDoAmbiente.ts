@@ -47,6 +47,7 @@ const contaDeTeste: VerificarContaMercadoPago = async (token) => {
 export async function gatewaysDoAmbiente(
   env: VariaveisPagamento,
   verificarContaMp: VerificarContaMercadoPago = contaDeTeste,
+  urlRetorno?: string,
 ): Promise<GatewaysDoAmbiente> {
   const simulador = new ProcessadorSimulado();
   const segredoSimulado = "segredo-simulado";
@@ -84,7 +85,7 @@ export async function gatewaysDoAmbiente(
     const teste = /^(sk|rk)_test_/.test(chaveStripe);
     if (teste) {
       const segredo = env.STRIPE_WEBHOOK_SECRET ?? "segredo-local-stripe";
-      gateways.stripe = AdaptadorStripe.conectar(chaveStripe, segredo);
+      gateways.stripe = AdaptadorStripe.conectar(chaveStripe, segredo, urlRetorno);
       segredos.stripe = segredo;
       avisos.push("Stripe: conectado (modo de teste)");
     } else {
@@ -93,4 +94,15 @@ export async function gatewaysDoAmbiente(
   }
 
   return { gateways, simulador, segredos, avisos };
+}
+
+/** Retorna o gateway simulado padrão para uso direto em testes e apps locais sem .env. */
+export function gatewaySimulado(): GatewaysDoAmbiente {
+  const simulador = new ProcessadorSimulado();
+  const segredoSimulado = "segredo-simulado";
+  const gateways: Partial<Record<MeioPagamento, GatewayPagamento>> = {
+    simulado: new AdaptadorProcessadorSimulado(simulador, segredoSimulado, "Simulado"),
+  };
+  const segredos: Partial<Record<MeioPagamento, string>> = { simulado: segredoSimulado };
+  return { gateways, simulador, segredos, avisos: [] };
 }

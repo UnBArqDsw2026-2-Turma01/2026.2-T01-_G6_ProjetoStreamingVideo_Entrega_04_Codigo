@@ -54,7 +54,7 @@ npm test -w @g6/chat # só um pacote
 
 ## Docker (local)
 
-Sobe a página integrada do CA-01 (`apps/web`) com um comando. A imagem usa Node 22 (exigência do monorepo), sem `.env` e sem segredos: o gateway de pagamento é o **simulado**.
+Sobe a página integrada do CA-01 (`apps/web`) com um comando. A imagem usa Node 22 (exigência do monorepo) e não contém `.env` nem segredos. Sem `.env`, o gateway de pagamento é o **simulado**; com um `.env` na raiz com credenciais **de teste** (veja `.env.example`), o Compose o lê ao subir o contêiner e a página também oferece Mercado Pago e Stripe.
 
 ```bash
 docker compose up --build

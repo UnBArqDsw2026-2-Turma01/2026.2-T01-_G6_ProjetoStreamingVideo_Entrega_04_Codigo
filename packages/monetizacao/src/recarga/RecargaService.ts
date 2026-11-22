@@ -19,7 +19,14 @@ import type { ServicoFinanceiro } from "../comum/financeiro";
 import { EfeitoConfirmacao, type ResultadoConfirmacao } from "./confirmacao";
 import { montarRecarga } from "./montarRecarga";
 import type { Pacote } from "./Pacote";
-import { ErroMeioPagamentoIndisponivel, type GatewayPagamento, type NotificacaoPagamento } from "./pagamento";
+import {
+  ErroGatewayIndisponivel,
+  ErroMeioPagamentoIndisponivel,
+  assinarNotificacao,
+  type GatewayPagamento,
+  type NotificacaoPagamento,
+  type ProcessadorSimulado,
+} from "./pagamento";
 import { MetodoRecarga, type Recarga } from "./Recarga";
 import type { RecargaController } from "./RecargaController";
 import type { ConfiguracaoPreco } from "./ServicoRecarga";
@@ -34,6 +41,8 @@ export interface DependenciasRecargaService {
   readonly eventos?: EventBus;
   readonly pacotes?: readonly Pacote[];
   readonly configuracaoPreco?: ConfiguracaoPreco;
+  readonly simulador?: ProcessadorSimulado;
+  readonly segredos?: Partial<Record<MeioPagamento, string>>;
 }
 
 /**
@@ -51,6 +60,8 @@ export class RecargaService implements RecargaPort {
   private readonly recargas: RepositorioEmMemoria<Recarga>;
   private readonly usuarios: RepositorioEmMemoria<Usuario>;
   private readonly eventos?: EventBus;
+  private readonly simulador?: ProcessadorSimulado;
+  private readonly segredos?: Partial<Record<MeioPagamento, string>>;
   /** Nome do gateway (E03) → meio do contrato. */
   private readonly meioDoGateway = new Map<string, MeioPagamento>();
   /** Meio do contrato → nome do gateway (E03). */
@@ -77,6 +88,13 @@ export class RecargaService implements RecargaPort {
     this.recargas = recargas;
     this.usuarios = dependencias.usuarios;
     this.eventos = dependencias.eventos;
+    this.simulador = dependencias.simulador;
+    this.segredos = dependencias.segredos;
+  }
+
+  /** Meios de pagamento disponíveis no momento. */
+  meios(): MeioPagamento[] {
+    return [...this.gatewayDoMeio.keys()];
   }
 
   async ofertas(sessao: Sessao): Promise<Resultado<OfertaRecarga[]>> {
@@ -157,6 +175,52 @@ export class RecargaService implements RecargaPort {
           valor: { situacao: "cancelada", recargaId: recarga.id, motivo: recarga.motivoCancelamento ?? "cancelada" },
         };
     }
+  }
+
+  /**
+   * Consulta a recarga e, se pendente, valida e credita o pagamento via webhook interno assinado.
+   * No simulado, aprova na hora; nos gateways reais, consulta o processador e só credita se aprovado.
+   */
+  async verificarPagamento(sessao: Sessao, recargaId: string): Promise<Resultado<SituacaoRecarga>> {
+    const recarga = this.recargas.buscarPorId(recargaId);
+    if (!recarga || recarga.usuario.id !== sessao.usuarioId) {
+      return { ok: false, erro: { codigo: "RECARGA_INEXISTENTE", mensagem: `Recarga não encontrada: ${recargaId}` } };
+    }
+
+    if (recarga.status !== StatusTransacao.PENDENTE) {
+      return this.consultar(sessao, recargaId);
+    }
+
+    const meio = this.meioDe(recarga);
+    const idCheckout = recarga.idCheckout;
+    if (!idCheckout) {
+      return this.consultar(sessao, recargaId);
+    }
+
+    if (meio === "simulado" && this.simulador) {
+      this.simulador.aprovar(idCheckout);
+    }
+
+    const segredo = this.segredos?.[meio] ?? "segredo-simulado";
+    const dados = { idEvento: `ev-${Date.now()}-${idCheckout}`, idPagamento: idCheckout, recargaId };
+    const notificacao: NotificacaoPagamento = {
+      ...dados,
+      assinatura: assinarNotificacao(segredo, dados),
+    };
+
+    try {
+      await this.receberAviso(meio, notificacao);
+    } catch (erro) {
+      if (erro instanceof ErroGatewayIndisponivel) {
+        return {
+          ok: false,
+          erro: { codigo: "PROCESSADOR_INDISPONIVEL", mensagem: erro.message },
+        };
+      }
+      throw erro;
+    }
+
+    return this.consultar(sessao, recargaId);
   }
 
   /**

@@ -11,8 +11,15 @@ services:
     image: g6-streaming:local
     ports:
       - "${PORT:-3000}:3000"
+    # Credenciais de TESTE do Mercado Pago e do Stripe, se houver um .env na raiz.
+    # Lidas só ao subir o contêiner: nunca entram na imagem (.dockerignore exclui o .env).
+    # Sem o arquivo, a monetização usa apenas o gateway simulado.
+    env_file:
+      - path: .env
+        required: false
     environment:
       NODE_ENV: production
       PORT: 3000
-      # Sem STRIPE_* / MERCADO_PAGO_*: monetização usa apenas o gateway simulado.
+      # Endereço que o navegador usa, para o retorno do checkout do Stripe.
+      URL_PUBLICA: "http://localhost:${PORT:-3000}"
     restart: unless-stopped

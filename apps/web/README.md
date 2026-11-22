@@ -14,6 +14,14 @@ npm test -w @g6/web  # CA-01 de ponta a ponta pela API HTTP
 
 Entre como **criador** (abre e encerra a live) e como **espectador** (recarrega, doa e usa o chat; o chat e o VOD aparecem para os dois).
 
+### Recarga: simulado, Mercado Pago e Stripe
+
+A recarga usa o `RecargaService` real de `@g6/monetizacao`. O **simulado** está sempre disponível e roda sem internet. Mercado Pago e Stripe aparecem como opções na página quando houver credenciais **de teste** no `.env` da raiz (veja o [README da monetização](../../packages/monetizacao/README.md#processadores-reais-opcional-só-em-modo-de-teste)); ao iniciar, o servidor diz quais meios conectou.
+
+Com um meio real, o pacote escolhido abre o checkout do processador em outra aba. Como o processador não alcança o `localhost` por webhook, a página consulta o pagamento a cada atualização (4 s) e o saldo sobe quando ele for aprovado. O retorno do Stripe cai em `/recarga/concluida`, que só pede para voltar à aba do CA-01.
+
+No Docker (`docker compose up --build`), o Compose passa o mesmo `.env` ao contêiner na hora de subir, sem copiá-lo para a imagem; sem `.env`, só o simulado.
+
 ## Estrutura
 
 | Arquivo | Papel |

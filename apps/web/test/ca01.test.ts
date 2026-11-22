@@ -128,3 +128,22 @@ test('recarga oferece o catálogo com desconto e imposto; faixas vêm da API', a
     servidor.close();
   }
 });
+
+test('recarga real: só o simulado sem .env; meio inválido ou não conectado é recusado', async () => {
+  const { servidor, chamar, entrar } = await iniciar();
+  try {
+    const espectador = await entrar('espectador');
+    assert.deepEqual((await chamar('GET', '/api/recarga/meios')).corpo, ['simulado']);
+    const pacote = (await chamar('GET', '/api/recarga/ofertas', espectador)).corpo[0].pacote;
+
+    const naoConectado = await chamar('POST', '/api/recarga', espectador, { pacote, meio: 'stripe' });
+    assert.equal(naoConectado.corpo.codigo, 'MEIO_INDISPONIVEL');
+    const invalido = await chamar('POST', '/api/recarga', espectador, { pacote, meio: 'pix' });
+    assert.equal(invalido.status, 400);
+    const inexistente = await chamar('POST', '/api/recarga/recarga-999/confirmar', espectador);
+    assert.equal(inexistente.status, 404);
+  } finally {
+    servidor.closeAllConnections();
+    servidor.close();
+  }
+});

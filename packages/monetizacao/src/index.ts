@@ -3,8 +3,11 @@
 // Implementação: #10, #11, #12.
 export {
   RecargaService,
+  criarRecargaDoApp,
   gatewaysDoAmbiente,
+  gatewaySimulado,
   assinarNotificacao,
+  type AppRecarga,
   type DependenciasRecargaService,
   type GatewaysDoAmbiente,
   type NotificacaoPagamento,
