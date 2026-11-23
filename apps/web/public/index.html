@@ -21,6 +21,10 @@
 
   <div class="palco">
     <main>
+      <section id="lobby" aria-label="Lives no ar" hidden>
+        <h2>Lives no ar</h2>
+        <div id="lista-lives" class="grade-lives vazio">Nenhuma live no ar agora. Quando um criador abrir uma live, ela aparece aqui.</div>
+      </section>
       <section id="player" aria-label="Live">
         <div id="sem-live" class="tela">
           <p id="texto-sem-live">Nenhuma live no ar.</p>
@@ -44,6 +48,7 @@
         </div>
       </section>
       <div class="barra-live">
+        <button type="button" id="voltar-lives" class="sec" hidden>← Lives no ar</button>
         <strong id="titulo-barra"></strong>
         <div class="acoes-live">
           <button type="button" id="camera-ligar" hidden>Ativar câmera</button>

@@ -1,7 +1,7 @@
 // Front-end do CA-01: só fala com a API HTTP (/api/*). Sem dependências nem build.
 import { criarVideo } from '/video.js';
 const $ = (seletor) => document.querySelector(seletor);
-const estado = { token: null, papel: null, live: null, checkout: null, fonte: null };
+const estado = { token: null, papel: null, usuario: null, live: null, escolhida: null, checkout: null, fonte: null };
 
 function avisar(texto, ok = false) {
   const el = $('#aviso');
@@ -40,7 +40,7 @@ document.querySelectorAll('[data-papel]').forEach((botao) =>
   botao.addEventListener('click', () =>
     tentar(async () => {
       const s = await api('POST', '/api/demo/sessao', { papel: botao.dataset.papel });
-      Object.assign(estado, { token: s.token, papel: s.papel });
+      Object.assign(estado, { token: s.token, papel: s.papel, usuario: s.usuario });
       $('#quem').textContent = `Sessão: ${s.papel}`;
       document.querySelectorAll('[data-papel]').forEach((b) => b.classList.toggle('ativo', b === botao));
       await atualizar();
@@ -360,19 +360,64 @@ $('#fechar-vod').addEventListener('click', fecharVod);
 dialogoVod.addEventListener('cancel', () => { playerVod.pause(); });
 dialogoVod.addEventListener('close', () => { playerVod.pause(); playerVod.removeAttribute('src'); });
 
+// ---- lives no ar (visão do espectador) ----
+function desenharLobby(lives) {
+  const caixa = $('#lista-lives');
+  const chave = JSON.stringify(lives.map((l) => [l.live, l.titulo]));
+  if (caixa.dataset.chave === chave) return; // sem redesenho à toa: não engole cliques nem foco
+  caixa.dataset.chave = chave;
+  caixa.className = lives.length ? 'grade-lives' : 'grade-lives vazio';
+  if (!lives.length) return void (caixa.textContent = 'Nenhuma live no ar agora. Quando um criador abrir uma live, ela aparece aqui.');
+  caixa.replaceChildren(...lives.map((l) => {
+    const cartao = document.createElement('button');
+    cartao.type = 'button';
+    cartao.className = 'cartao-live';
+    const miniatura = document.createElement('div');
+    miniatura.className = 'miniatura';
+    miniatura.innerHTML = '<span class="selo-ao-vivo">Ao vivo</span><span>Assistir</span>';
+    const conteudo = document.createElement('div');
+    conteudo.className = 'conteudo';
+    const titulo = document.createElement('strong');
+    titulo.textContent = l.titulo;
+    const quando = document.createElement('small');
+    quando.textContent = `No ar desde ${new Date(l.iniciadaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+    conteudo.append(titulo, quando);
+    cartao.append(miniatura, conteudo);
+    cartao.addEventListener('click', () => tentar(async () => { estado.escolhida = l.live; await atualizar(); }));
+    return cartao;
+  }));
+}
+$('#voltar-lives').addEventListener('click', () => tentar(async () => { estado.escolhida = null; await atualizar(); }));
+
 // ---- estado geral (live no ar e VODs) ----
 async function atualizar() {
   const [lives, vods, gravacoes] = await Promise.all([api('GET', '/api/lives'), api('GET', '/api/vods'), api('GET', '/api/vods/gravacoes')]);
-  const nova = lives[0] ?? null;
+  const ehCriador = estado.papel === 'criador';
+  // Criador vê a própria live (ou o formulário para abrir uma). Espectador (logado ou não) escolhe uma
+  // na lista de lives no ar; se a escolhida acabou, volta para a lista.
+  const nova = ehCriador
+    ? lives.find((l) => l.criador === estado.usuario) ?? null
+    : lives.find((l) => l.live === estado.escolhida) ?? null;
+  if (!ehCriador && !nova) estado.escolhida = null;
   if (nova?.live !== estado.live?.live) acompanharChat(nova);
   estado.live = nova;
   video.sincronizar(nova);
+
+  const noLobby = !ehCriador && !nova;
+  $('#lobby').hidden = !noLobby;
+  $('#player').hidden = noLobby;
+  $('.barra-live').hidden = noLobby;
+  $('#painel-chat').hidden = noLobby;
+  $('.palco').classList.toggle('sem-chat', noLobby);
+  if (noLobby) desenharLobby(lives);
+
   $('#no-ar').hidden = !nova;
   $('#sem-live').hidden = !!nova;
   $('#titulo-barra').textContent = nova?.titulo ?? '';
-  $('#form-live').hidden = estado.papel !== 'criador';
-  $('#texto-sem-live').textContent = estado.papel === 'criador' ? 'Abra sua live.' : 'Nenhuma live no ar.';
-  $('#encerrar').hidden = !(nova && estado.papel === 'criador');
+  $('#form-live').hidden = !ehCriador;
+  $('#texto-sem-live').textContent = 'Abra sua live.';
+  $('#voltar-lives').hidden = ehCriador || !nova;
+  $('#encerrar').hidden = !(nova && ehCriador);
 
   const lista = $('#vods');
   const chaveVods = JSON.stringify([vods, gravacoes]);

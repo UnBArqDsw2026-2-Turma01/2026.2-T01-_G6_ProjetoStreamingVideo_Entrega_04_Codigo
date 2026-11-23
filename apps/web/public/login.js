@@ -91,7 +91,7 @@ if (formularioLogin) {
   async function entrarComSessao(sessao) {
     const atual = await requisicaoLogin('/api/sessao', undefined, sessao.token);
     guardarLogin({ ...atual, token: sessao.token });
-    Object.assign(estado, { token: sessao.token, papel: atual.papel });
+    Object.assign(estado, { token: sessao.token, papel: atual.papel, usuario: atual.usuario });
     document.querySelector('#quem').textContent = `Sessão: ${atual.papel}`;
     document.querySelectorAll('[data-papel]').forEach((b) => b.classList.toggle('ativo', b.dataset.papel === atual.papel));
     await atualizar();
