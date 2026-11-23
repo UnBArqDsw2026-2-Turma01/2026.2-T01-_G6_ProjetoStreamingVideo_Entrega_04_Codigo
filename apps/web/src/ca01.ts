@@ -123,6 +123,11 @@ export interface Pagamentos {
   readonly meios: readonly MeioPagamento[];
   /** Paga no processador simulado e entrega o aviso assinado ao Proxy (`receberAviso`), que credita e publica `RecargaConcluida`. */
   confirmarSimulado(checkout: CheckoutPendente): Promise<void>;
+  /**
+   * Meios reais (Stripe): entrega ao Proxy um aviso do checkout; o Proxy consulta o próprio processador
+   * e só credita se ele disser que está pago. Faz o papel do webhook, que não alcança um localhost.
+   */
+  verificarExterno(checkout: CheckoutPendente): Promise<void>;
 }
 
 export class ServicoCA01 {
@@ -205,11 +210,14 @@ export class ServicoCA01 {
   async confirmarRecarga(sessao: Sessao, recargaId: string): Promise<Resultado<SituacaoRecarga>> {
     const antes = await this.portas.recarga.consultar(sessao, recargaId);
     if (!antes.ok || antes.valor.situacao !== 'pendente') return antes;
-    if (antes.valor.checkout.meio !== 'simulado') {
-      return falha('AGUARDANDO_PROCESSADOR', 'Conclua o pagamento no checkout; o crédito entra quando o processador confirmar');
+    const { checkout } = antes.valor;
+    if (checkout.meio === 'simulado') await this.pagamentos.confirmarSimulado(checkout);
+    else await this.pagamentos.verificarExterno(checkout);
+    const depois = await this.portas.recarga.consultar(sessao, recargaId);
+    if (depois.ok && depois.valor.situacao === 'pendente' && checkout.meio !== 'simulado') {
+      return falha('PAGAMENTO_PENDENTE', 'O processador ainda não confirmou o pagamento. Conclua o checkout e tente de novo.');
     }
-    await this.pagamentos.confirmarSimulado(antes.valor.checkout);
-    return this.portas.recarga.consultar(sessao, recargaId);
+    return depois;
   }
 
   saldo(usuario: UsuarioId): number {
@@ -299,6 +307,14 @@ export function compor(pagamentos?: GatewaysDoAmbiente): ServicoCA01 {
       processador.aprovar(idPagamento);
       const dados = { idEvento: `web-${++avisos}`, idPagamento, recargaId: checkout.recargaId };
       await servicoRecarga.receberAviso('simulado', { ...dados, assinatura: assinarNotificacao(segredo, dados) });
+    },
+    async verificarExterno(checkout) {
+      // O Stripe devolve a URL do Checkout Session, que contém o id da sessão (cs_test_...).
+      const idPagamento = /\b(cs_(?:test|live)_[A-Za-z0-9]+)/.exec(checkout.instrucoes)?.[1];
+      const segredoMeio = pagamentos?.segredos[checkout.meio];
+      if (checkout.meio !== 'stripe' || !idPagamento || !segredoMeio) return;
+      const dados = { idEvento: `web-${++avisos}`, idPagamento, recargaId: checkout.recargaId };
+      await servicoRecarga.receberAviso(checkout.meio, { ...dados, assinatura: assinarNotificacao(segredoMeio, dados) });
     },
   };
 

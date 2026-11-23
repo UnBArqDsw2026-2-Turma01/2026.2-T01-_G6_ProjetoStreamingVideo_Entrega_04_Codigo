@@ -94,11 +94,11 @@ function mostrarCheckout(checkout) {
   const simulado = checkout.meio === 'simulado';
   $('#checkout').hidden = false;
   $('#checkout-texto').innerHTML = `${checkout.moedaACreditar.toLocaleString('pt-BR')} ${ESTRELA} por ${reais(checkout.valorCobradoCentavos)} · ${NOMES_MEIO[checkout.meio] ?? checkout.meio}`;
-  $('#confirmar').hidden = !simulado;
+  $('#confirmar').textContent = simulado ? 'Confirmar pagamento simulado' : 'Já paguei, verificar';
   const link = $('#abrir-checkout');
   link.hidden = simulado;
   if (!simulado) link.href = checkout.instrucoes;
-  $('#checkout-nota').textContent = simulado ? '' : 'O crédito entra quando o processador confirmar o pagamento.';
+  $('#checkout-nota').textContent = simulado ? '' : 'Pague no checkout (aba nova) e volte aqui para verificar.';
 }
 
 async function carregarOfertas() {
