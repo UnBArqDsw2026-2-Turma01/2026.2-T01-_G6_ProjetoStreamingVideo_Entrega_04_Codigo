@@ -1,48 +1,56 @@
+import type { ModeracaoPort, MensagemChat, VereditoModeracao } from '@g6/shared-kernel';
+import { usuarioId } from '@g6/shared-kernel';
 import { IObserver } from '../interfaces.js';
 import { StreamEvent } from '../../types/events.js';
-import { TextEntropyAnalyzer } from '../../algorithms/TextEntropyAnalyzer.js';
 
 /**
  * AutoModObserver (GoF Observer)
- * Filtro automático de chat com cálculo matemático REAL de Entropia de Shannon,
- * normalização de leetspeak e detecção léxica de toxicidade e phishing.
+ *
+ * Observa as mensagens de chat do canal e pede o veredito ao `ModeracaoPort` do
+ * shared-kernel. Na E03 este observer tinha uma cópia própria do `TextEntropyAnalyzer`
+ * (entropia de Shannon, leetspeak, toxicidade e phishing), que divergiu da cópia do
+ * `@g6/moderacao`. Como o canal não pode importar outro contexto (RD3), a análise passa a
+ * vir pelo port: quem compõe o canal em `apps/*` injeta o `ModeracaoService` real, e
+ * existe uma única implementação do AutoMod no monorepo.
  */
 export class AutoModObserver implements IObserver {
   public readonly id: string;
   public readonly name: string;
-  public readonly targetSystem = 'AutoMod Real-Time NLP Engine';
+  public readonly targetSystem = 'AutoMod (ModeracaoPort)';
   private totalFilteredMessages = 0;
-  private readonly inspectionLogs: Array<{ text: string; entropy: number; violations: string[] }> = [];
+  private readonly inspectionLogs: Array<{ text: string; decisao: VereditoModeracao['decisao']; violations: string[] }> = [];
 
-  constructor(id: string = 'obs-automod', name: string = 'AutoMod Shannon Analyzer') {
+  constructor(
+    private readonly moderacao: ModeracaoPort,
+    id: string = 'obs-automod',
+    name: string = 'AutoMod',
+  ) {
     this.id = id;
     this.name = name;
   }
 
-  update(event: StreamEvent): void {
-    if (event.type === 'CHAT_MESSAGE_SENT' && event.moderationInfo) {
-      const message = event.moderationInfo.detectedEntity;
-      
-      // Análise matemática real de entropia e toxicidade
-      const analysis = TextEntropyAnalyzer.analyze(message);
+  async update(event: StreamEvent): Promise<void> {
+    if (event.type !== 'CHAT_MESSAGE_SENT' || !event.moderationInfo) return;
 
-      if (analysis.isSpam || analysis.isToxic || analysis.detectedViolations.length > 0) {
-        this.totalFilteredMessages++;
-        this.inspectionLogs.push({
-          text: message,
-          entropy: analysis.entropy,
-          violations: analysis.detectedViolations
-        });
+    const texto = event.moderationInfo.detectedEntity;
+    const autor = event.moderationInfo.authorId ?? 'anonimo';
+    const mensagem: MensagemChat = {
+      id: `${event.channelId}:${event.timestamp.getTime()}`,
+      autor: usuarioId(autor),
+      nomeAutor: autor,
+      texto,
+      em: event.timestamp,
+    };
 
-        console.log(
-          `\x1b[33m[AutoMod Engine - Real Analysis]\x1b[0m 🛡 Mensagem retida no canal [@${event.channelId}]:\n` +
-          `   - Texto: "${message}"\n` +
-          `   - Entropia de Shannon: ${analysis.entropy} bits/char | Toxicidade: ${(analysis.toxicityScore * 100).toFixed(0)}%\n` +
-          `   - Violações Detectadas: [${analysis.detectedViolations.join(', ')}]\n` +
-          `   - Ação Aplicada: Mensagem deletada e autor colocado em Timeout.`
-        );
-      }
-    }
+    const veredito = await this.moderacao.avaliar(mensagem);
+    if (veredito.decisao === 'aprovada') return;
+
+    this.totalFilteredMessages++;
+    this.inspectionLogs.push({ text: texto, decisao: veredito.decisao, violations: [veredito.motivo] });
+    console.log(
+      `\x1b[33m[AutoMod]\x1b[0m 🛡 Mensagem retida no canal [@${event.channelId}]: "${texto}" ` +
+        `→ ${veredito.decisao} (${veredito.motivo})`,
+    );
   }
 
   public getFilteredCount(): number {

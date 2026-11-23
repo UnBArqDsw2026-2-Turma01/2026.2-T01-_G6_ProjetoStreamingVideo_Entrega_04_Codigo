@@ -224,7 +224,7 @@ export class StreamChannel implements ISubject {
   /**
    * Processamento e Moderação de Chat (AutoMod)
    */
-  public async processChatMessage(_sender: string, message: string): Promise<NotificationReport> {
+  public async processChatMessage(sender: string, message: string): Promise<NotificationReport> {
     const isToxic = message.toLowerCase().includes('hate') || message.toLowerCase().includes('hack') || message.toLowerCase().includes('doxx');
     const isSpam = message.length > 150 || (message.match(/http/g) || []).length > 2;
     const hasViolation = isToxic || isSpam;
@@ -235,6 +235,7 @@ export class StreamChannel implements ISubject {
       severity: hasViolation ? 'WARNING' : 'INFO',
       flagType: isToxic ? 'TEXT_TOXICITY' : isSpam ? 'SPAM' : 'TEXT_TOXICITY',
       detectedEntity: message,
+      authorId: sender,
       confidenceScore: isToxic ? 0.94 : isSpam ? 0.88 : 0.01,
       actionApplied: isToxic ? 'MESSAGE_BLOCKED_TIMEOUT_60S' : isSpam ? 'MESSAGE_DELETED_SPAM_FILTER' : 'MESSAGE_ALLOWED',
       timestamp: new Date()
