@@ -81,7 +81,7 @@ export function registrarRotasCA01(app: App, ctx: Contexto): void {
   app.rota('GET', '/api/vods', () => ok(servico.vodsDisponiveis()));
 
   // Recarga
-  app.rota('GET', '/api/saldo', comSessao((sessao) => ok({ moeda: servico.saldo(sessao.usuarioId) })));
+  app.rota('GET', '/api/saldo', comSessao((sessao) => ok({ moeda: servico.saldo(sessao.usuarioId), ganhosCentavos: servico.ganhosCentavos(sessao.usuarioId) })));
   // Retorno do checkout do Stripe (success_url padrão do adaptador): página curta que avisa a aba da compra.
   app.rota('GET', '/recarga/concluida', () => ({
     fluxo: (res) => { res.writeHead(302, { location: '/recarga-concluida.html' }); res.end(); },

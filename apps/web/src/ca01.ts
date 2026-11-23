@@ -1,14 +1,12 @@
-// Composition root provisório e casos de uso do CA-01 (live com doação destacada).
+// Composition root e casos de uso do CA-01 (live com doação destacada).
 //
-// Liga os ports do shared-kernel a implementações. A recarga já é a real (`RecargaService`, #10); os
-// demais ports ainda usam os fakes do kernel. Conforme a página adotar os pacotes reais (#8 transmissão,
-// #9 conteudo, #11 doação, #13 chat, #14 moderação), troca-se a linha correspondente em `compor()`.
-// Nada fora deste arquivo conhece as implementações: as rotas só falam com `ServicoCA01`.
+// Liga os ports do shared-kernel aos módulos reais, como o apps/cli-demo: identidade (#5), transmissão
+// (#8), conteúdo (#9), recarga (#10), doação (#11), mensagem destacada (#12), chat (#13) e moderação (#14).
+// As rotas só falam com `ServicoCA01`; nada fora deste arquivo conhece as implementações.
 import {
   EventBusEmMemoria,
   usuarioId,
   type AutenticacaoPort,
-  type CanalId,
   type ChatPort,
   type CheckoutPendente,
   type ComprovanteDoacao,
@@ -20,7 +18,6 @@ import {
   type LiveResumo,
   type MeioPagamento,
   type MensagemChat,
-  type MensagemDestacada,
   type ModeracaoPort,
   type MoedaVirtual,
   type OfertaRecarga,
@@ -34,20 +31,20 @@ import {
   type TransmissaoPort,
   type UsuarioId,
 } from '@g6/shared-kernel';
-import {
-  FakeAutenticacao,
-  FakeChat,
-  FakeDoacao,
-  FakeModeracao,
-  FakeTransmissao,
-} from '@g6/shared-kernel/testing';
+import { criarAutenticacaoExemplo } from '@g6/identidade';
+import { TransmissaoService } from '@g6/transmissao';
+import { ConteudoDeLive } from '@g6/conteudo';
+import { ChatService } from '@g6/chat';
+import { ModeracaoService } from '@g6/moderacao';
 import { RecargaService, assinarNotificacao, type GatewaysDoAmbiente } from '@g6/monetizacao';
 // Peças internas da monetização que o pacote ainda não exporta (mesmo caminho usado pelo apps/cli-demo):
-// o processador simulado e o domínio de carteiras que o `RecargaService` precisa receber.
+// processador simulado, carteiras, a doação (Facade + Mediator) e as faixas da mensagem destacada.
 import { AdaptadorProcessadorSimulado, ProcessadorSimulado } from '../../../packages/monetizacao/src/recarga/pagamento';
 import { RepositorioEmMemoria } from '../../../packages/monetizacao/src/comum/compartilhado';
 import { Usuario } from '../../../packages/monetizacao/src/comum/dominio';
 import { ServicoFinanceiro } from '../../../packages/monetizacao/src/comum/financeiro';
+import { montarDoacao } from '../../../packages/monetizacao/src/doacao';
+import { FaixaDestaque } from '../../../packages/monetizacao/src/destaque';
 
 export interface Portas {
   readonly autenticacao: AutenticacaoPort;
@@ -68,48 +65,58 @@ export interface VodResumo {
 
 const falha = (codigo: string, mensagem: string): Resultado<never> => ({ ok: false, erro: { codigo, mensagem } });
 
-// PROVISÓRIO: espelha as faixas de `FaixaDestaque` (#12). Quando `@g6/monetizacao` exportar
-// `montarMensagemDestacada` no index do pacote, apague esta tabela e chame a função real.
-const FAIXAS = [
-  { minimo: 50000, cor: 'VERMELHO', fixacaoMin: 300, limite: 350 },
-  { minimo: 5000, cor: 'ROSA', fixacaoMin: 30, limite: 250 },
-  { minimo: 2000, cor: 'LARANJA', fixacaoMin: 10, limite: 225 },
-  { minimo: 500, cor: 'VERDE', fixacaoMin: 2, limite: 150 },
-  { minimo: 200, cor: 'AZUL', fixacaoMin: 0, limite: 50 },
-];
+/** Faixas da mensagem destacada, da maior para a menor, lidas do `FaixaDestaque` real (#12). */
+const FAIXAS = [FaixaDestaque.FAIXA_5, FaixaDestaque.FAIXA_4, FaixaDestaque.FAIXA_3, FaixaDestaque.FAIXA_2, FaixaDestaque.FAIXA_1].map((f) => ({
+  minimo: f.quantidadeMinima,
+  cor: f.cor,
+  fixacaoMin: f.tempoFixacaoMin,
+  limite: f.limiteCaracteres,
+}));
 
-function montarDestaque(valor: MoedaVirtual, texto: string, base: MensagemChat): Resultado<MensagemDestacada> {
-  const faixa = FAIXAS.find((f) => valor >= f.minimo);
-  if (!faixa) return falha('VALOR_ABAIXO_DO_MINIMO', 'Mensagem destacada exige doação de ao menos 200');
-  if (texto.length > faixa.limite) {
-    return falha('MENSAGEM_ACIMA_DO_LIMITE', `Esta faixa aceita até ${faixa.limite} caracteres`);
-  }
-  return { ok: true, valor: { ...base, valor, cor: faixa.cor, tempoFixacaoMin: faixa.fixacaoMin } };
-}
+const nomeDoPapel = (papel: Papel): string => (papel === 'criador' ? 'Criador' : papel === 'moderador' ? 'Moderador' : 'Espectador');
 
 /**
- * `RecargaService` (#10) com as contas da sessão: o serviço real só atende quem tem carteira no
- * repositório da monetização, e as contas vêm do login (#17). A carteira é aberta no primeiro uso.
+ * Carteiras da monetização para as contas da sessão. As contas vêm do login (#17); a carteira é aberta no
+ * primeiro uso, e a do criador já sai habilitada a receber doações (como no apps/cli-demo).
  */
+export class Carteiras {
+  constructor(readonly usuarios: RepositorioEmMemoria<Usuario>) {}
+
+  garantir(sessao: Sessao): Usuario {
+    let usuario = this.usuarios.buscarPorId(sessao.usuarioId);
+    if (!usuario) {
+      usuario = new Usuario(sessao.usuarioId, nomeDoPapel(sessao.papel), `${sessao.usuarioId}@ca01.local`);
+      this.usuarios.salvar(usuario);
+    }
+    if (sessao.papel === 'criador' && !usuario.perfil.estaHabilitadoAReceber()) usuario.perfil.habilitarMonetizacao();
+    return usuario;
+  }
+
+  /** Moeda virtual disponível para doar. */
+  moeda(usuario: UsuarioId): number {
+    return this.usuarios.buscarPorId(usuario)?.carteira.saldoMoedaVirtual ?? 0;
+  }
+
+  /** O que já recebeu em dinheiro pelas doações (repasse ao criador), em centavos. */
+  ganhosCentavos(usuario: UsuarioId): number {
+    return this.usuarios.buscarPorId(usuario)?.carteira.saldoDinheiro.centavos ?? 0;
+  }
+}
+
+/** `RecargaService` (#10) atendendo as contas da sessão: abre a carteira antes de usar o serviço. */
 class RecargaComCarteiras implements RecargaPort {
   constructor(
     private readonly servico: RecargaService,
-    private readonly usuarios: RepositorioEmMemoria<Usuario>,
+    private readonly carteiras: Carteiras,
   ) {}
 
-  private garantirCarteira(sessao: Sessao): void {
-    if (!this.usuarios.buscarPorId(sessao.usuarioId)) {
-      this.usuarios.salvar(new Usuario(sessao.usuarioId, sessao.usuarioId, `${sessao.usuarioId}@ca01.local`));
-    }
-  }
-
   ofertas(sessao: Sessao): Promise<Resultado<OfertaRecarga[]>> {
-    this.garantirCarteira(sessao);
+    this.carteiras.garantir(sessao);
     return this.servico.ofertas(sessao);
   }
 
   recarregar(sessao: Sessao, pacote: PacoteId, meio: MeioPagamento): Promise<Resultado<CheckoutPendente, ErroRecarga>> {
-    this.garantirCarteira(sessao);
+    this.carteiras.garantir(sessao);
     return this.servico.recarregar(sessao, pacote, meio);
   }
 
@@ -118,7 +125,7 @@ class RecargaComCarteiras implements RecargaPort {
   }
 }
 
-/** O que a página precisa dos meios de pagamento além do port: quais existem e como "pagar" no simulado. */
+/** O que a página precisa dos meios de pagamento além do port: quais existem e como confirmar. */
 export interface Pagamentos {
   readonly meios: readonly MeioPagamento[];
   /** Paga no processador simulado e entrega o aviso assinado ao Proxy (`receberAviso`), que credita e publica `RecargaConcluida`. */
@@ -132,7 +139,6 @@ export interface Pagamentos {
 
 export class ServicoCA01 {
   private readonly lives = new Map<string, LiveResumo>();
-  private readonly saldos = new Map<string, number>();
   private readonly vods: VodResumo[] = [];
   private sequencia = 0;
 
@@ -140,10 +146,9 @@ export class ServicoCA01 {
     readonly portas: Portas,
     readonly bus: EventBus,
     private readonly pagamentos: Pagamentos,
+    private readonly carteiras: Carteiras,
   ) {
-    // RecargaConcluida é o aviso de que o crédito entrou (o port só devolve o checkout pendente).
-    bus.assinar('RecargaConcluida', (e) => this.creditar(e.usuario, e.moeda));
-    // PROVISÓRIO até #9: quem cria o VOD é o pacote `conteudo` ao receber LiveEncerrada.
+    // A gravação em si é criada pelo `conteudo` (#9) ao receber LiveEncerrada; aqui fica a lista da página.
     bus.assinar('LiveEncerrada', (e) => {
       const live = this.lives.get(e.live);
       if (!live) return;
@@ -154,30 +159,25 @@ export class ServicoCA01 {
 
   /** Faixas da mensagem destacada, da menor para a maior, para a tela montar o seletor de valor. */
   faixas() {
-    return [...FAIXAS].reverse().map((f) => ({ minimo: f.minimo, cor: f.cor, fixacaoMin: f.fixacaoMin, limite: f.limite }));
+    return [...FAIXAS].reverse();
   }
 
-  // ---- sessão (provisório até o login da #17) ----
+  // ---- sessão de demonstração (os testes usam; a página usa o login da #17) ----
   sessaoDemo(papel: Papel): Sessao {
     const nome = papel === 'criador' ? 'usr_criador' : papel === 'moderador' ? 'usr_moderador' : 'usr_espectador';
     return { usuarioId: usuarioId(nome), papel, token: `tok_${nome}_${++this.sequencia}`, expiraEm: new Date(Date.now() + 3_600_000) };
   }
 
-  // ---- transmissão ----
+  // ---- transmissão (o canal publica LiveIniciada e LiveEncerrada) ----
   async abrirLive(sessao: Sessao, preset: PresetTransmissao): Promise<Resultado<LiveResumo>> {
+    if (sessao.papel === 'criador') this.carteiras.garantir(sessao); // quem abre a live recebe as doações
     const r = await this.portas.transmissao.abrir(sessao, preset);
-    if (!r.ok) return r;
-    this.lives.set(r.valor.live, r.valor);
-    this.bus.publicar({ tipo: 'LiveIniciada', live: r.valor.live, canal: r.valor.canal as CanalId, em: new Date() });
+    if (r.ok) this.lives.set(r.valor.live, r.valor);
     return r;
   }
 
-  async encerrarLive(sessao: Sessao, live: LiveId): Promise<Resultado<void>> {
-    const resumo = this.lives.get(live);
-    const r = await this.portas.transmissao.encerrar(sessao, live);
-    if (!r.ok || !resumo) return r;
-    this.bus.publicar({ tipo: 'LiveEncerrada', live, canal: resumo.canal, em: new Date() });
-    return r;
+  encerrarLive(sessao: Sessao, live: LiveId): Promise<Resultado<void>> {
+    return this.portas.transmissao.encerrar(sessao, live);
   }
 
   livesAbertas(): LiveResumo[] {
@@ -203,9 +203,8 @@ export class ServicoCA01 {
   }
 
   /**
-   * Confirma uma recarga pendente no meio simulado: o processador aprova e o aviso assinado passa pelo
-   * Proxy do `RecargaService`, que credita a carteira e publica `RecargaConcluida`. Nos meios reais a
-   * confirmação vem do próprio processador, depois do pagamento no checkout de teste.
+   * Confirma uma recarga pendente: no simulado, o processador aprova e o aviso assinado passa pelo Proxy;
+   * nos reais, o Proxy consulta o processador. Em ambos, é o `RecargaService` que credita e publica `RecargaConcluida`.
    */
   async confirmarRecarga(sessao: Sessao, recargaId: string): Promise<Resultado<SituacaoRecarga>> {
     const antes = await this.portas.recarga.consultar(sessao, recargaId);
@@ -220,71 +219,64 @@ export class ServicoCA01 {
     return depois;
   }
 
+  /** Moeda virtual na carteira real da monetização. */
   saldo(usuario: UsuarioId): number {
-    return this.saldos.get(usuario) ?? 0;
+    return this.carteiras.moeda(usuario);
   }
 
-  private creditar(usuario: UsuarioId, moeda: MoedaVirtual): void {
-    this.saldos.set(usuario, this.saldo(usuario) + moeda);
+  /** Quanto a conta já recebeu pelas doações (repasse ao criador), em centavos. */
+  ganhosCentavos(usuario: UsuarioId): number {
+    return this.carteiras.ganhosCentavos(usuario);
   }
 
-  // ---- doação com mensagem destacada ----
+  // ---- doação ----
+  /**
+   * Doação pelo `DoacaoPort` real (#11): debita a moeda do espectador, repassa ao criador em dinheiro,
+   * monta a mensagem destacada (#12), publica no chat com moderação (#13, #14) e publica `DoacaoConfirmada`.
+   */
   async doar(sessao: Sessao, live: LiveId, valor: MoedaVirtual, texto?: string): Promise<Resultado<ComprovanteDoacao>> {
     if (!Number.isInteger(valor) || valor <= 0) return falha('VALOR_INVALIDO', 'Informe uma quantidade inteira positiva');
-    const aberta = await this.portas.transmissao.consultar(live);
-    if (!aberta.ok) return falha('LIVE_ENCERRADA', 'Só é possível doar em uma live no ar');
-    if (this.saldo(sessao.usuarioId) < valor) return falha('SALDO_INSUFICIENTE', 'Saldo insuficiente: faça uma recarga');
-
-    let destacada: MensagemDestacada | undefined;
-    const limpo = texto?.trim();
-    if (limpo) {
-      const base: MensagemChat = { id: `msg_${++this.sequencia}`, autor: sessao.usuarioId, nomeAutor: this.nomeDe(sessao), texto: limpo, em: new Date() };
-      const montada = montarDestaque(valor, limpo, base);
-      if (!montada.ok) return montada;
-      const veredito = await this.portas.moderacao.avaliar(base);
-      if (veredito.decisao !== 'aprovada') return falha('MENSAGEM_REPROVADA', `Mensagem não aprovada pela moderação: ${veredito.motivo}`);
-      destacada = montada.valor;
-    }
-
-    this.saldos.set(sessao.usuarioId, this.saldo(sessao.usuarioId) - valor);
-    const r = await this.portas.doacao.doar(sessao, live, valor, limpo);
-    if (!r.ok) {
-      this.creditar(sessao.usuarioId, valor);
-      return r;
-    }
-    this.bus.publicar({ tipo: 'DoacaoConfirmada', live, doador: sessao.usuarioId, valor, em: new Date() });
-    if (destacada) {
-      await this.portas.chat.publicarDestacada(live, destacada);
-      this.bus.publicar({ tipo: 'MensagemPublicada', live, autor: sessao.usuarioId, destacada: true, em: new Date() });
-    }
+    this.carteiras.garantir(sessao);
+    const r = await this.portas.doacao.doar(sessao, live, valor, texto?.trim() || undefined);
+    if (!r.ok && r.erro.codigo === 'NAO_ENCONTRADA') return falha('LIVE_ENCERRADA', 'Só é possível doar em uma live no ar');
     return r;
   }
 
-  // ---- chat ----
+  // ---- chat (a moderação acontece dentro do `ChatService`) ----
   async enviarMensagem(sessao: Sessao, live: LiveId, texto: string): Promise<Resultado<void>> {
     const limpo = texto.trim();
     if (!limpo) return falha('MENSAGEM_VAZIA', 'Escreva uma mensagem');
     const aberta = await this.portas.transmissao.consultar(live);
     if (!aberta.ok) return falha('LIVE_ENCERRADA', 'O chat só funciona com a live no ar');
-    const mensagem: MensagemChat = { id: `msg_${++this.sequencia}`, autor: sessao.usuarioId, nomeAutor: this.nomeDe(sessao), texto: limpo, em: new Date() };
-    const veredito = await this.portas.moderacao.avaliar(mensagem);
-    if (veredito.decisao !== 'aprovada') return falha('MENSAGEM_REPROVADA', `Mensagem não aprovada pela moderação: ${veredito.motivo}`);
-    const r = await this.portas.chat.publicar(live, mensagem);
-    if (r.ok) this.bus.publicar({ tipo: 'MensagemPublicada', live, autor: sessao.usuarioId, destacada: false, em: new Date() });
-    return r;
-  }
-
-  private nomeDe(sessao: Sessao): string {
-    return sessao.papel === 'criador' ? 'Criador' : sessao.papel === 'moderador' ? 'Moderador' : 'Espectador';
+    const mensagem: MensagemChat = { id: `msg_${++this.sequencia}`, autor: sessao.usuarioId, nomeAutor: nomeDoPapel(sessao.papel), texto: limpo, em: new Date() };
+    return this.portas.chat.publicar(live, mensagem);
   }
 }
 
 /**
- * Composition root: instancia o EventBus e as implementações e injeta os ports.
- * A recarga é a real (#10); sem `pagamentos`, só o meio simulado (testes e `npm run web` sem `.env`).
+ * Composition root: instancia o EventBus e os módulos reais e injeta os ports.
+ * Sem `pagamentos`, a recarga oferece só o meio simulado (testes e `npm run web` sem `.env`).
  */
 export function compor(pagamentos?: GatewaysDoAmbiente): ServicoCA01 {
   const bus = new EventBusEmMemoria();
+
+  // Identidade (#5): o login da página usa a mesma cadeia em src/auth; aqui fica o port para o restante.
+  const { autenticacao } = criarAutenticacaoExemplo();
+
+  // Transmissão (#8): Builder da configuração + canal (Observer), que publica LiveIniciada/LiveEncerrada.
+  const transmissao = new TransmissaoService({ eventBus: bus });
+
+  // Conteúdo (#9): cria a gravação (Factory Method) ao receber LiveEncerrada.
+  new ConteudoDeLive({ eventos: bus, transmissao }).assinar();
+
+  // Moderação (#14) e chat (#13): o chat só entrega o que a moderação aprova e publica MensagemPublicada.
+  const moderacao = new ModeracaoService();
+  const chat = new ChatService({ moderacao, eventos: bus });
+
+  // Monetização: carteiras compartilhadas pela recarga (#10) e pela doação (#11).
+  const usuarios = new RepositorioEmMemoria<Usuario>();
+  const carteiras = new Carteiras(usuarios);
+  const financeiro = new ServicoFinanceiro();
 
   let gateways = pagamentos?.gateways;
   let simulador = pagamentos?.simulador;
@@ -294,8 +286,8 @@ export function compor(pagamentos?: GatewaysDoAmbiente): ServicoCA01 {
     segredoSimulado = 'segredo-simulado';
     gateways = { simulado: new AdaptadorProcessadorSimulado(simulador, segredoSimulado, 'Simulado') };
   }
-  const usuarios = new RepositorioEmMemoria<Usuario>();
-  const servicoRecarga = new RecargaService({ gateways, financeiro: new ServicoFinanceiro(), usuarios, eventos: bus });
+  const servicoRecarga = new RecargaService({ gateways, financeiro, usuarios, eventos: bus });
+  const { servico: doacao } = montarDoacao({ financeiro, chat, transmissao, eventBus: bus, usuarios });
 
   let avisos = 0;
   const processador = simulador;
@@ -319,12 +311,12 @@ export function compor(pagamentos?: GatewaysDoAmbiente): ServicoCA01 {
   };
 
   const portas: Portas = {
-    autenticacao: new FakeAutenticacao(),
-    transmissao: new FakeTransmissao(),
-    recarga: new RecargaComCarteiras(servicoRecarga, usuarios),
-    doacao: new FakeDoacao(),
-    chat: new FakeChat(),
-    moderacao: new FakeModeracao(),
+    autenticacao,
+    transmissao,
+    recarga: new RecargaComCarteiras(servicoRecarga, carteiras),
+    doacao,
+    chat,
+    moderacao,
   };
-  return new ServicoCA01(portas, bus, pagamentosDaPagina);
+  return new ServicoCA01(portas, bus, pagamentosDaPagina, carteiras);
 }

@@ -169,6 +169,10 @@ async function carregarOfertas() {
   if (checkoutGuardado() && !estado.checkout) setTimeout(() => retomarCheckout().catch((e) => avisar(e.message)), 0);
   $('#saldo').textContent = saldo.moeda.toLocaleString('pt-BR');
   $('#saldo-doacao').textContent = saldo.moeda.toLocaleString('pt-BR');
+  // Repasse das doações recebidas (criador): R$ por moeda, creditado pela doação real (#11).
+  const ganhos = saldo.ganhosCentavos ?? 0;
+  $('#ganhos').hidden = !(ganhos > 0 || estado.papel === 'criador');
+  $('#ganhos-valor').textContent = reais(ganhos);
   const caixa = $('#ofertas');
   // Só redesenha quando as ofertas mudam: redesenhar a cada atualização cortaria as animações de hover.
   const chave = JSON.stringify(ofertas);
@@ -287,10 +291,11 @@ formDoacao.addEventListener('submit', (e) => {
   const erro = $('#erro-doacao');
   erro.hidden = true;
   api('POST', `/api/lives/${estado.live.live}/doacoes`, { valor: Number(campoValor.value), mensagem: campoMensagem.value || undefined })
-    .then(async () => {
+    .then(async (comprovante) => {
       campoMensagem.value = '';
       dialogo.close();
-      avisar('Doação enviada', true);
+      // A doação real avisa quando a mensagem não saiu destacada (valor abaixo da faixa ou chat recusou).
+      avisar(comprovante?.aviso ? `Doação enviada. ${comprovante.aviso}` : 'Doação enviada', true);
       await carregarOfertas();
     })
     .catch((e) => {
