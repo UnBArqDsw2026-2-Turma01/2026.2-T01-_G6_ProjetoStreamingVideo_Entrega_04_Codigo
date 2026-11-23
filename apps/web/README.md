@@ -16,9 +16,14 @@ Entre como **criador** (abre e encerra a live) e como **espectador** (recarrega,
 
 ### Criador e espectador ao mesmo tempo
 
-Abra **http://localhost:3000/demo.html** (link "Duas telas" no topo da página): criador à esquerda e espectador à direita, na mesma janela. Entre nos dois (o criador precisa do código do autenticador: `npm run totp` na raiz mostra o código atual da conta de demonstração), abra a live à esquerda e ative a câmera; a direita mostra o que o espectador vê, com chat, recarga e doação funcionando entre os dois.
+```bash
+npm run dev          # a mesma aplicação em duas portas: 3000 e 3001 (PORT=4000 → 4000 e 4001)
+npm run totp         # código do autenticador do criador (vale 30 s)
+```
 
-Também dá para usar duas abas: cada aba guarda o papel na URL (`/?papel=criador` e `/?papel=espectador`).
+Abra **http://localhost:3000** e entre como criador (senha + código do autenticador); abra **http://localhost:3001** e entre como espectador. Cada porta é uma origem diferente para o navegador, então cada uma guarda o próprio login, e as duas compartilham lives, chat, vídeo e gravações (é um só servidor escutando em duas portas). Abra a live e ative a câmera em uma; na outra, a live aparece em **Lives no ar**, é só clicar para assistir.
+
+O espectador nunca vê o formulário de abrir live: sem live escolhida ele vê a lista de lives no ar; ao entrar em uma, o player e o chat, com **← Lives no ar** para voltar. Alternativas: `/demo.html` mostra as duas telas na mesma janela e `/?papel=criador` ou `/?papel=espectador` fixam o papel de uma aba.
 
 ### Câmera, tela e webcam
 
@@ -37,7 +42,8 @@ Enquanto transmite, o navegador do criador grava (`MediaRecorder`) e envia peda�
 
 | Arquivo | Papel |
 | --- | --- |
-| `src/servidor.ts` | Monta a aplicação, registra as rotas e chama o ponto de extensão `registrarRotas` |
+| `src/servidor.ts` | Monta a aplicação, registra as rotas, chama o ponto de extensão `registrarRotas` e sobe em uma ou mais portas |
+| `src/dev.ts` | `npm run dev`: a mesma aplicação em duas portas |
 | `src/ca01.ts` | *Composition root* (`compor()`) e casos de uso do CA-01 (`ServicoCA01`) |
 | `src/rotas.ts` | Rotas HTTP finas; definem `Contexto` e `RegistrarRotas` |
 | `src/video.ts` | Sinalização WebRTC da câmera (`/api/lives/:id/video/*`) |

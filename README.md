@@ -47,7 +47,8 @@ npm run typecheck    # checagem de tipos em todos os pacotes
 npm test             # testes de todos os pacotes
 npm run check        # typecheck + test
 npm run demo         # CA-01 no terminal (apps/cli-demo)
-npm run web          # página integrada (apps/web); criador + espectador lado a lado em /demo.html
+npm run web          # página integrada (apps/web) em http://localhost:3000
+npm run dev          # a mesma aplicação em 3000 e 3001: criador numa, espectador na outra
 npm run totp         # código do autenticador do criador de demonstração
 
 npm test -w @g6/chat # só um pacote
