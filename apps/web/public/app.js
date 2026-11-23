@@ -90,8 +90,9 @@ function mostrarMeios(meios) {
   if (meios.includes(atual)) select.value = atual;
 }
 
-// O checkout de um meio real abre nesta mesma aba; o pedido pendente fica guardado na aba para,
-// na volta (pagamento concluído ou botão Voltar), a página retomar e verificar sozinha.
+// O checkout de um meio real abre em outra aba. Esta aba guarda o pedido pendente e verifica sozinha
+// quando o processador devolve a outra aba como concluída (aviso por BroadcastChannel) ou quando o
+// usuário volta para cá; "Já paguei" continua disponível para verificar na mão.
 const CHAVE_CHECKOUT = 'g6-checkout-pendente';
 function guardarCheckout(checkout) {
   try {
@@ -121,6 +122,35 @@ $('#abrir-checkout').addEventListener('click', () => {
   guardarCheckout(estado.checkout);
   $('#confirmar').hidden = false;
 });
+
+/** Verifica sem alarde: se o processador ainda não confirmou, não mostra erro (o usuário pode estar pagando). */
+let verificando = false;
+async function verificarEmSilencio() {
+  if (verificando || !estado.checkout || estado.checkout.meio === 'simulado' || !checkoutGuardado()) return;
+  verificando = true;
+  try {
+    await confirmarRecarga();
+    avisar('Pagamento confirmado: moedas creditadas', true);
+  } catch {
+    // ainda pendente: segue aguardando
+  } finally {
+    verificando = false;
+  }
+}
+
+let canalRecarga = null;
+try { canalRecarga = new BroadcastChannel('g6-recarga'); } catch {}
+canalRecarga?.addEventListener('message', (e) => { if (e.data === 'concluida') verificarEmSilencio(); });
+window.addEventListener('focus', () => verificarEmSilencio());
+
+// Esta é a aba que o processador devolveu: avisa a aba da compra e orienta a voltar para ela.
+if (new URL(location.href).searchParams.get('recarga') === 'concluida' && !checkoutGuardado()) {
+  const url = new URL(location.href);
+  url.searchParams.delete('recarga');
+  history.replaceState(null, '', url);
+  canalRecarga?.postMessage('concluida');
+  avisar('Pagamento concluído. Pode fechar esta aba e voltar à anterior.', true);
+}
 
 async function confirmarRecarga() {
   await api('POST', `/api/recarga/${estado.checkout.recargaId}/confirmar`);
