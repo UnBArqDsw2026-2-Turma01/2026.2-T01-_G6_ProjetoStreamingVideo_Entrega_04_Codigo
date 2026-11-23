@@ -1,12 +1,12 @@
 import { ErroDestaque } from "./ErroDestaque";
-import type { MensagemDestacada } from "./MensagemDestacada";
+import type { MensagemEmCamadas } from "./MensagemEmCamadas";
 import { MensagemDecorator } from "./MensagemDecorator";
 
 /** ConcreteDecorator: fixa a mensagem no topo do chat pelo tempo da faixa (SC01). */
 export class ComFixacao extends MensagemDecorator {
   private readonly minutos: number;
 
-  constructor(interna: MensagemDestacada, minutos: number) {
+  constructor(interna: MensagemEmCamadas, minutos: number) {
     super(interna);
     if (!Number.isInteger(minutos) || minutos <= 0) {
       throw new ErroDestaque(`O tempo de fixação deve ser um número inteiro positivo de minutos: ${minutos}`);
