@@ -36,15 +36,9 @@ import { TransmissaoService } from '@g6/transmissao';
 import { ConteudoDeLive } from '@g6/conteudo';
 import { ChatService } from '@g6/chat';
 import { ModeracaoService } from '@g6/moderacao';
-import { RecargaService, assinarNotificacao, type GatewaysDoAmbiente } from '@g6/monetizacao';
-// Peças internas da monetização que o pacote ainda não exporta (mesmo caminho usado pelo apps/cli-demo):
-// processador simulado, carteiras, a doação (Facade + Mediator) e as faixas da mensagem destacada.
-import { AdaptadorProcessadorSimulado, ProcessadorSimulado } from '../../../packages/monetizacao/src/recarga/pagamento';
-import { RepositorioEmMemoria } from '../../../packages/monetizacao/src/comum/compartilhado';
-import { Usuario } from '../../../packages/monetizacao/src/comum/dominio';
-import { ServicoFinanceiro } from '../../../packages/monetizacao/src/comum/financeiro';
-import { montarDoacao } from '../../../packages/monetizacao/src/doacao';
-import { FaixaDestaque } from '../../../packages/monetizacao/src/destaque';
+// Monetização pelo ponto de entrada público: processador simulado, carteiras, a doação
+// (Facade + Mediator) e as faixas da mensagem destacada.
+import { AdaptadorProcessadorSimulado, assinarNotificacao, FaixaDestaque, montarDoacao, ProcessadorSimulado, RecargaService, RepositorioEmMemoria, ServicoFinanceiro, type GatewaysDoAmbiente, Usuario } from '@g6/monetizacao';
 
 export interface Portas {
   readonly autenticacao: AutenticacaoPort;
