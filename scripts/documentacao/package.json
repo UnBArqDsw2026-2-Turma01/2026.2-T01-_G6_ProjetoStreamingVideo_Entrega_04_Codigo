@@ -1,0 +1,15 @@
+{
+  "name": "g6-documentacao",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Referência do @g6/shared-kernel gerada com TypeDoc (extra E9, #22). Fica fora das workspaces porque o TypeDoc só lê TypeScript até a 6, e o monorepo usa o 7.",
+  "scripts": {
+    "kernel": "typedoc --options typedoc.json",
+    "kernel:conferir": "npm run kernel && git diff --exit-code -- ../../packages/shared-kernel/docs/api"
+  },
+  "devDependencies": {
+    "typedoc": "0.28.20",
+    "typedoc-plugin-markdown": "4.14.1",
+    "typescript": "6.0.3"
+  }
+}
