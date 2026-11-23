@@ -29,9 +29,17 @@ function esquecerLogin(papel) {
   if (localStorage.getItem(CHAVE_ULTIMO_PAPEL) === papel) localStorage.removeItem(CHAVE_ULTIMO_PAPEL);
   sessionStorage.removeItem(CHAVE_PAPEL_ABA);
 }
-/** Sessão desta aba: o papel escolhido nela ou, numa aba nova, o último papel usado. */
+/** Papel pedido na URL (`/?papel=criador`): é o que permite criador e espectador lado a lado (ver /demo.html). */
+function papelDaUrl() {
+  const papel = new URLSearchParams(location.search).get('papel');
+  return papel === 'criador' || papel === 'espectador' ? papel : null;
+}
+/** Papel desta aba: o da URL; senão o escolhido nela; senão, numa aba nova, o último papel usado. */
+function papelDaAba() {
+  return papelDaUrl() || sessionStorage.getItem(CHAVE_PAPEL_ABA) || localStorage.getItem(CHAVE_ULTIMO_PAPEL);
+}
 function lerLogin() {
-  const papel = sessionStorage.getItem(CHAVE_PAPEL_ABA) || localStorage.getItem(CHAVE_ULTIMO_PAPEL);
+  const papel = papelDaAba();
   return papel ? sessaoDoPapel(papel) : null;
 }
 async function requisicaoLogin(caminho, corpo, token) {
@@ -45,6 +53,8 @@ async function requisicaoLogin(caminho, corpo, token) {
 const formularioLogin = document.querySelector('#form-login');
 if (formularioLogin) {
   const confirmar = new URLSearchParams(location.search).get('acao') === 'step-up';
+  const voltar = document.querySelector('.login-painel > a');
+  if (voltar && papelDaAba()) voltar.href = `/?papel=${encodeURIComponent(papelDaAba())}`;
   if (confirmar) {
     document.querySelector('#titulo-login').textContent = 'Confirmar identidade';
     document.querySelector('#descricao-login').textContent = 'Confirme sua sessão com um novo código do autenticador.';
@@ -54,8 +64,8 @@ if (formularioLogin) {
     formularioLogin.elements.codigoTotp.required = true;
     document.querySelector('#enviar-login').textContent = 'Confirmar';
   } else {
-    const papel = new URLSearchParams(location.search).get('papel');
-    if (papel === 'criador' || papel === 'espectador') formularioLogin.elements.email.value = `${papel}@ca01.test`;
+    const papel = papelDaUrl();
+    if (papel) formularioLogin.elements.email.value = `${papel}@ca01.test`;
   }
   formularioLogin.addEventListener('submit', async (evento) => {
     evento.preventDefault();
@@ -72,7 +82,7 @@ if (formularioLogin) {
       guardarLogin(sessao);
       formularioLogin.reset();
       if (confirmar) { aviso.className = 'ok'; aviso.textContent = 'Identidade confirmada. Você pode voltar à transmissão.'; }
-      else location.assign('/');
+      else location.assign(`/?papel=${encodeURIComponent(sessao.papel)}`);
     } catch (erro) { aviso.textContent = erro.message; }
     finally { botao.disabled = false; }
   });
@@ -87,24 +97,29 @@ if (formularioLogin) {
     await atualizar();
   }
   // Intercepta os botões antes dos listeners da demo da #16: reaproveita a sessão guardada do papel
-  // ou leva ao login.
+  // ou leva ao login. A URL passa a carregar o papel (`/?papel=`), que é o que separa uma aba da outra.
   document.addEventListener('click', async (evento) => {
     const botao = evento.target.closest('[data-papel]');
     if (!botao) return;
     evento.preventDefault(); evento.stopImmediatePropagation();
-    const guardada = sessaoDoPapel(botao.dataset.papel);
+    const papel = botao.dataset.papel;
+    const guardada = sessaoDoPapel(papel);
     if (guardada) {
+      if (papelDaAba() !== papel) return location.assign(`/?papel=${encodeURIComponent(papel)}`);
       try { await entrarComSessao(guardada); return; }
-      catch { esquecerLogin(botao.dataset.papel); }
+      catch { esquecerLogin(papel); }
     }
-    location.assign(`/login.html?papel=${encodeURIComponent(botao.dataset.papel)}`);
+    location.assign(`/login.html?papel=${encodeURIComponent(papel)}`);
   }, true);
   const contaLogin = lerLogin();
   if (contaLogin) {
     entrarComSessao(contaLogin).catch(() => { esquecerLogin(contaLogin.papel); avisar('Sessão expirada. Entre novamente.'); });
+  } else if (papelDaUrl()) {
+    // Aba aberta já com um papel (ex.: as duas telas) e sem sessão: vai direto ao login desse papel.
+    location.replace(`/login.html?papel=${encodeURIComponent(papelDaUrl())}`);
   }
   const confirmarLogin = document.createElement('a');
-  confirmarLogin.href = '/login.html?acao=step-up'; confirmarLogin.textContent = 'Confirmar identidade';
+  confirmarLogin.href = `/login.html?acao=step-up${papelDaAba() ? `&papel=${encodeURIComponent(papelDaAba())}` : ''}`; confirmarLogin.textContent = 'Confirmar identidade';
   pagina.append(confirmarLogin);
   const sairLogin = document.createElement('button');
   sairLogin.textContent = 'Sair'; sairLogin.className = 'sec';
