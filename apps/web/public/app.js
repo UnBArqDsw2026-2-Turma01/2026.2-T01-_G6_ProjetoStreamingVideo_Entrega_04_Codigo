@@ -328,9 +328,41 @@ function acompanharChat(live) {
   if (estado.fonte) estado.fonte.onmessage = (ev) => mostrarMensagem(JSON.parse(ev.data));
 }
 
+// ---- gravação (VOD) ----
+const dialogoVod = $('#dialogo-vod');
+const playerVod = $('#video-vod');
+
+function abrirVod(vod, partes) {
+  let atual = 0;
+  const tocar = () => {
+    playerVod.src = `/api/vods/${vod.live}/video/${partes[atual].parte}`;
+    $('#info-vod').textContent = partes.length > 1 ? `Trecho ${atual + 1} de ${partes.length}` : '';
+    playerVod.play().catch(() => {});
+  };
+  playerVod.onended = () => { if (++atual < partes.length) tocar(); };
+  // Vídeo gravado pelo navegador chega sem duração; forçar um salto ao fim faz a barra de progresso funcionar.
+  playerVod.onloadedmetadata = () => {
+    if (playerVod.duration !== Infinity) return;
+    playerVod.currentTime = 1e101;
+    playerVod.addEventListener('timeupdate', () => { playerVod.currentTime = 0; }, { once: true });
+  };
+  $('#titulo-vod').textContent = vod.titulo;
+  tocar();
+  dialogoVod.showModal();
+}
+function fecharVod() {
+  playerVod.pause();
+  playerVod.removeAttribute('src');
+  playerVod.load();
+  dialogoVod.close();
+}
+$('#fechar-vod').addEventListener('click', fecharVod);
+dialogoVod.addEventListener('cancel', () => { playerVod.pause(); });
+dialogoVod.addEventListener('close', () => { playerVod.pause(); playerVod.removeAttribute('src'); });
+
 // ---- estado geral (live no ar e VODs) ----
 async function atualizar() {
-  const [lives, vods] = await Promise.all([api('GET', '/api/lives'), api('GET', '/api/vods')]);
+  const [lives, vods, gravacoes] = await Promise.all([api('GET', '/api/lives'), api('GET', '/api/vods'), api('GET', '/api/vods/gravacoes')]);
   const nova = lives[0] ?? null;
   if (nova?.live !== estado.live?.live) acompanharChat(nova);
   estado.live = nova;
@@ -343,14 +375,26 @@ async function atualizar() {
   $('#encerrar').hidden = !(nova && estado.papel === 'criador');
 
   const lista = $('#vods');
+  const chaveVods = JSON.stringify([vods, gravacoes]);
+  // Só redesenha quando algo mudou: refazer os cartões a cada atualização engoliria cliques.
+  if (lista.dataset.chave !== chaveVods) {
+  lista.dataset.chave = chaveVods;
   lista.className = vods.length ? 'grade-vod' : 'grade-vod vazio';
   if (!vods.length) lista.textContent = 'Nenhuma live encerrada ainda.';
   else lista.replaceChildren(...vods.map((v) => {
     const item = document.createElement('div');
     item.className = 'vod';
-    const capa = document.createElement('div');
+    const partes = gravacoes[v.live] ?? [];
+    const capa = document.createElement(partes.length ? 'button' : 'div');
     capa.className = 'capa';
-    capa.textContent = 'Gravação';
+    if (partes.length) {
+      capa.type = 'button';
+      capa.setAttribute('aria-label', `Assistir a gravação de ${v.titulo}`);
+      capa.innerHTML = '<span class="tocar"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>Assistir</span>';
+      capa.addEventListener('click', () => abrirVod(v, partes));
+    } else {
+      capa.textContent = 'Sem vídeo gravado';
+    }
     const titulo = document.createElement('strong');
     titulo.textContent = v.titulo;
     const hora = document.createElement('small');
@@ -358,6 +402,7 @@ async function atualizar() {
     item.append(capa, titulo, hora);
     return item;
   }));
+  }
   await carregarOfertas();
 }
 

@@ -12,6 +12,7 @@
     <h1>CA-01 · Live com doação destacada</h1>
     <div class="sessao">
       <span id="quem">Sem sessão</span>
+      <a href="/demo.html" title="Criador e espectador lado a lado">Duas telas</a>
       <button data-papel="criador">Entrar como criador</button>
       <button data-papel="espectador">Entrar como espectador</button>
     </div>
@@ -52,6 +53,22 @@
         </div>
       </div>
 
+      <div id="controles-webcam" class="controles-webcam" hidden>
+        <button type="button" id="webcam-alternar" class="sec">Adicionar webcam</button>
+        <span id="webcam-opcoes" hidden>
+          <span class="grupo-cantos" role="group" aria-label="Posição da webcam">
+            <button type="button" class="sec icone" data-canto="sup-esq" title="Canto superior esquerdo" aria-label="Canto superior esquerdo">↖</button>
+            <button type="button" class="sec icone" data-canto="sup-dir" title="Canto superior direito" aria-label="Canto superior direito">↗</button>
+            <button type="button" class="sec icone" data-canto="inf-esq" title="Canto inferior esquerdo" aria-label="Canto inferior esquerdo">↙</button>
+            <button type="button" class="sec icone" data-canto="inf-dir" title="Canto inferior direito" aria-label="Canto inferior direito">↘</button>
+          </span>
+          <label>Tamanho
+            <select id="webcam-tamanho"><option value="pequena">Pequena</option><option value="media" selected>Média</option><option value="grande">Grande</option></select>
+          </label>
+          <small>Arraste a webcam na prévia para posicioná-la.</small>
+        </span>
+      </div>
+
       <section id="painel-recarga">
         <div class="cabecalho-recarga">
           <h2>Recarga de moeda virtual</h2>
@@ -86,6 +103,11 @@
       </form>
     </aside>
   </div>
+  <dialog id="dialogo-vod" aria-labelledby="titulo-vod">
+    <header><h2 id="titulo-vod"></h2><button type="button" id="fechar-vod" class="icone" aria-label="Fechar">✕</button></header>
+    <video id="video-vod" controls playsinline></video>
+    <p id="info-vod" role="status"></p>
+  </dialog>
   <dialog id="dialogo-doacao" aria-labelledby="titulo-doacao">
     <form id="form-doacao">
       <header>
