@@ -143,14 +143,7 @@ try { canalRecarga = new BroadcastChannel('g6-recarga'); } catch {}
 canalRecarga?.addEventListener('message', (e) => { if (e.data === 'concluida') verificarEmSilencio(); });
 window.addEventListener('focus', () => verificarEmSilencio());
 
-// Esta é a aba que o processador devolveu: avisa a aba da compra e orienta a voltar para ela.
-if (new URL(location.href).searchParams.get('recarga') === 'concluida' && !checkoutGuardado()) {
-  const url = new URL(location.href);
-  url.searchParams.delete('recarga');
-  history.replaceState(null, '', url);
-  canalRecarga?.postMessage('concluida');
-  avisar('Pagamento concluído. Pode fechar esta aba e voltar à anterior.', true);
-}
+
 
 async function confirmarRecarga() {
   await api('POST', `/api/recarga/${estado.checkout.recargaId}/confirmar`);
@@ -160,18 +153,12 @@ async function confirmarRecarga() {
   await carregarOfertas();
 }
 
-/** Na volta do checkout: retoma o pedido e, se o processador mandou de volta como concluído, verifica sozinha. */
+/** Ao recarregar a página com um pedido pendente: retoma o pedido ("Já paguei" fica disponível). */
 async function retomarCheckout() {
   const guardado = checkoutGuardado();
   if (!guardado || estado.checkout) return;
   estado.checkout = guardado;
   mostrarCheckout(guardado, true);
-  const url = new URL(location.href);
-  if (url.searchParams.get('recarga') === 'concluida') {
-    url.searchParams.delete('recarga');
-    history.replaceState(null, '', url);
-    await tentar(confirmarRecarga, 'Pagamento confirmado: moedas creditadas');
-  }
 }
 
 async function carregarOfertas() {
