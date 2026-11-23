@@ -92,9 +92,9 @@ export class TransmissaoService implements TransmissaoPort {
     }
     this.criadoresOcupados.add(criador.usuarioId);
 
-    const live = this.gerarLiveId();
     const canalDaLive = canalDoCriador(criador.usuarioId);
     try {
+      const live = this.gerarLiveId();
       const canal = new StreamChannel(
         canalDaLive,
         criador.usuarioId,
@@ -105,7 +105,6 @@ export class TransmissaoService implements TransmissaoPort {
         config,
       );
       this.configurarCanal?.(canal, criador);
-      await canal.goLive(config, undefined, undefined, undefined, live);
 
       const resumo: LiveResumo = {
         live,
@@ -113,9 +112,23 @@ export class TransmissaoService implements TransmissaoPort {
         criador: criador.usuarioId,
         // `config.title` já passou pelo trim do builder; `preset.titulo` pode ter espaços.
         titulo: config.title,
-        iniciadaEm: canal.getMetadata().startedAt ?? new Date(),
+        // Instante do serviço: o `startedAt` do canal só existe dentro do `goLive`, tarde
+        // demais para o resumo já estar consultável. Difere de `LiveIniciada.em` por ms.
+        iniciadaEm: new Date(),
       };
+      // A live precisa ser consultável antes de o canal publicar `LiveIniciada`: o EventBus
+      // entrega ao assinante de forma síncrona, dentro do `goLive`, e quem reage ao evento
+      // (o `conteudo`) chama `consultar` nesse mesmo instante para saber dono e título.
+      // Limites: se o `goLive` falhar depois de publicar, o serviço desfaz o próprio estado,
+      // mas assinantes que já reagiram ao evento não são desfeitos; e, como o id já é público
+      // no evento, um assinante poderia chamar `encerrar` ainda durante a abertura.
       this.noAr.set(live, { resumo, canal });
+      try {
+        await canal.goLive(config, undefined, undefined, undefined, live);
+      } catch (erro) {
+        this.noAr.delete(live);
+        throw erro;
+      }
       return { ok: true, valor: resumo };
     } catch (erro) {
       this.criadoresOcupados.delete(criador.usuarioId);
