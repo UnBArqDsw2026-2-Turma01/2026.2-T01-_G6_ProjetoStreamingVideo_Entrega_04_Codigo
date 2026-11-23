@@ -16,3 +16,4 @@ coverage
 agent-transcripts
 *.md
 !README.md
+**/.vods-temporarios

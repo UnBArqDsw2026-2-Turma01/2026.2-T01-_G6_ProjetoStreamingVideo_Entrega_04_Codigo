@@ -9,6 +9,7 @@ export type Metodo = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
 export interface Requisicao {
   readonly params: Readonly<Record<string, string>>;
+  /** JSON já interpretado; um `Buffer` nas rotas registradas com `corpo: 'bruto'`. */
   readonly corpo: unknown;
   readonly cabecalhos: IncomingMessage['headers'];
 }
@@ -19,9 +20,15 @@ export type Resposta =
 
 export type Tratador = (req: Requisicao) => Promise<Resposta> | Resposta;
 
+/** Opções de uma rota: por padrão o corpo é JSON de até 64 KB; `bruto` entrega os bytes (ex.: pedaços de vídeo). */
+export interface OpcoesRota {
+  readonly corpo?: 'json' | 'bruto';
+  readonly limiteBytes?: number;
+}
+
 /** O que um módulo plugado enxerga do servidor. */
 export interface App {
-  rota(metodo: Metodo, caminho: string, tratador: Tratador): void;
+  rota(metodo: Metodo, caminho: string, tratador: Tratador, opcoes?: OpcoesRota): void;
 }
 
 interface Rota {
@@ -29,6 +36,7 @@ interface Rota {
   readonly padrao: RegExp;
   readonly chaves: string[];
   readonly tratador: Tratador;
+  readonly opcoes: OpcoesRota;
 }
 
 const TIPOS: Record<string, string> = {
@@ -46,13 +54,13 @@ const PASTA_PUBLICA = fileURLToPath(new URL('../../public/', import.meta.url));
 export class Aplicacao implements App {
   private readonly rotas: Rota[] = [];
 
-  rota(metodo: Metodo, caminho: string, tratador: Tratador): void {
+  rota(metodo: Metodo, caminho: string, tratador: Tratador, opcoes: OpcoesRota = {}): void {
     const chaves: string[] = [];
     const fonte = caminho.replace(/:([a-zA-Z]+)/g, (_, chave: string) => {
       chaves.push(chave);
       return '([^/]+)';
     });
-    this.rotas.push({ metodo, padrao: new RegExp(`^${fonte}$`), chaves, tratador });
+    this.rotas.push({ metodo, padrao: new RegExp(`^${fonte}$`), chaves, tratador, opcoes });
   }
 
   criarServidor(): Server {
@@ -76,9 +84,13 @@ export class Aplicacao implements App {
       const params = Object.fromEntries(rota.chaves.map((chave, i) => [chave, decodeURIComponent(casou[i + 1]!)]));
       let corpo: unknown;
       try {
-        corpo = metodo === 'GET' ? undefined : await lerCorpo(req);
+        if (metodo === 'GET') corpo = undefined;
+        else if (rota.opcoes.corpo === 'bruto') corpo = await lerBruto(req, rota.opcoes.limiteBytes ?? LIMITE_CORPO);
+        else corpo = await lerCorpo(req);
       } catch {
-        return responderJson(res, 400, { codigo: 'CORPO_INVALIDO', mensagem: 'JSON inválido ou grande demais' });
+        return rota.opcoes.corpo === 'bruto'
+          ? responderJson(res, 413, { codigo: 'CORPO_GRANDE_DEMAIS', mensagem: 'Corpo grande demais' })
+          : responderJson(res, 400, { codigo: 'CORPO_INVALIDO', mensagem: 'JSON inválido ou grande demais' });
       }
       const resposta = await rota.tratador({ params, corpo, cabecalhos: req.headers });
       if ('fluxo' in resposta) return resposta.fluxo(res);
@@ -88,6 +100,19 @@ export class Aplicacao implements App {
     if (metodo === 'GET' && !pathname.startsWith('/api/')) return servirEstatico(pathname, res);
     responderJson(res, 404, { codigo: 'NAO_ENCONTRADA', mensagem: 'Rota inexistente' });
   }
+}
+
+/** Lê os bytes do corpo. Acima do limite, descarta o resto (até 2×) para o cliente receber o 413 em vez de a conexão cair. */
+async function lerBruto(req: IncomingMessage, limite: number): Promise<Buffer> {
+  const partes: Buffer[] = [];
+  let total = 0;
+  for await (const parte of req) {
+    total += (parte as Buffer).length;
+    if (total > limite * 2) { req.destroy(); throw new Error('corpo grande demais'); }
+    if (total <= limite) partes.push(parte as Buffer);
+  }
+  if (total > limite) throw new Error('corpo grande demais');
+  return Buffer.concat(partes);
 }
 
 async function lerCorpo(req: IncomingMessage): Promise<unknown> {

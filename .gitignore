@@ -6,3 +6,6 @@ coverage/
 !.env.example
 *.log
 .DS_Store
+
+# Gravações temporárias das lives (apagadas ao encerrar o servidor)
+apps/web/.vods-temporarios/

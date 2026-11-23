@@ -17,6 +17,7 @@
     "check": "npm run typecheck && npm test",
     "demo": "npm start -w @g6/cli-demo",
     "web": "npm start -w @g6/web",
+    "totp": "node --import tsx scripts/totp.mjs",
     "qualidade": "node --import tsx tests/qualidade/verificar-dependencias.mjs && tsc -p tests/qualidade/tsconfig.json && node --import tsx --test tests/qualidade/cenarios.test.ts"
   },
   "devDependencies": {

@@ -1,6 +1,10 @@
 // Câmera da live (WebRTC). Sem dependências nem build; a sinalização está em src/video.ts.
-//   criador:   liga a câmera (ou compartilha a tela), mostra a prévia e responde às ofertas dos espectadores;
+//   criador:   liga a câmera ou compartilha a tela (com a webcam por cima, se quiser), mostra a prévia,
+//              grava para o VOD e responde às ofertas dos espectadores;
 //   espectador: pergunta se a câmera está ligada, pede o vídeo ao criador e exibe o que chegar.
+import { criarComposicao, LARGURA, ALTURA } from '/composicao.js';
+import { criarGravador } from '/gravacao.js';
+
 const INTERVALO_CRIADOR_MS = 1000;
 const INTERVALO_ESPECTADOR_MS = 1500;
 const ESPERA_ICE_MS = 2500;
@@ -38,8 +42,12 @@ export function criarVideo({ estado, api, avisar, $ }) {
   const botaoCamera = $('#camera-ligar');
   const botaoTela = $('#tela-ligar');
   const botaoParar = $('#camera-parar');
+  const painelWebcam = $('#controles-webcam');
+  const botaoWebcam = $('#webcam-alternar');
+  const opcoesWebcam = $('#webcam-opcoes');
+  const gravador = criarGravador({ estado });
 
-  const criador = { stream: null, live: null, tempo: null, conexoes: new Map(), ocupado: false };
+  const criador = { stream: null, live: null, tempo: null, conexoes: new Map(), ocupado: false, composicao: null };
   const espectador = { live: null, versao: null, pc: null, tempo: null, ocupado: false, tentativa: 0 };
 
   function mostrarAviso(texto) {
@@ -64,7 +72,6 @@ export function criarVideo({ estado, api, avisar, $ }) {
     if (!navigator.mediaDevices?.getUserMedia) {
       throw Object.assign(new Error(), { name: 'SecurityError' });
     }
-    if (tipo === 'tela') return navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
     try {
       return await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true });
     } catch (erro) {
@@ -108,24 +115,38 @@ export function criarVideo({ estado, api, avisar, $ }) {
     }
   }
 
+  /** Tela inteira/janela/aba. A webcam entra por cima depois, pelo botão "Adicionar webcam". */
+  async function capturarTela() {
+    if (!navigator.mediaDevices?.getDisplayMedia) throw Object.assign(new Error(), { name: 'SecurityError' });
+    const tela = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
+    const composicao = criarComposicao();
+    composicao.definirTela(tela);
+    return { composicao, stream: composicao.stream, origem: tela };
+  }
+
   async function ligar(tipo) {
     if (!estado.live) return avisar('Abra a live antes de ligar a câmera.');
     if (criador.stream) await desligar();
     let stream;
+    let composicao = null;
+    let origem;
     try {
-      stream = await capturar(tipo);
+      if (tipo === 'tela') ({ stream, composicao, origem } = await capturarTela());
+      else origem = stream = await capturar(tipo);
     } catch (erro) {
       return avisar(mensagemDeErro(erro));
     }
     try {
       await api('POST', `/api/lives/${estado.live.live}/video/camera`, { ativa: true });
     } catch (erro) {
+      composicao?.encerrar();
       stream.getTracks().forEach((f) => f.stop());
       return avisar(erro.message);
     }
-    Object.assign(criador, { stream, live: estado.live.live });
+    Object.assign(criador, { stream, live: estado.live.live, composicao });
     // Se o navegador (ou o usuário, no compartilhamento de tela) encerrar a captura, desliga tudo.
-    stream.getVideoTracks()[0]?.addEventListener('ended', () => desligar());
+    origem.getVideoTracks()[0]?.addEventListener('ended', () => desligar());
+    gravador.iniciar(stream, estado.live.live);
     mostrarVideo(stream);
     mostrarAviso('');
     clearInterval(criador.tempo);
@@ -137,16 +158,75 @@ export function criarVideo({ estado, api, avisar, $ }) {
   async function desligar(avisarServidor = true) {
     clearInterval(criador.tempo);
     criador.tempo = null;
-    criador.stream?.getTracks().forEach((f) => f.stop());
+    const { composicao, live, stream } = criador;
+    Object.assign(criador, { stream: null, live: null, composicao: null });
+    await gravador.parar(); // envia o último pedaço antes de soltar a câmera
+    composicao?.encerrar();
+    stream?.getTracks().forEach((f) => f.stop());
     criador.conexoes.forEach((pc) => pc.close());
     criador.conexoes.clear();
-    const live = criador.live;
-    Object.assign(criador, { stream: null, live: null });
     mostrarVideo(null);
     if (avisarServidor && live) await api('POST', `/api/lives/${live}/video/camera`, { ativa: false }).catch(() => {});
     atualizarBotoes();
     sincronizar(estado.live);
   }
+
+  // ---------------- webcam sobre a tela ----------------
+  async function alternarWebcam() {
+    const comp = criador.composicao;
+    if (!comp) return;
+    if (comp.temWebcam()) {
+      comp.definirWebcam(null);
+    } else {
+      try {
+        let cam;
+        try { cam = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 360 } }, audio: true }); }
+        catch (erro) {
+          if (erro?.name !== 'NotFoundError' && erro?.name !== 'OverconstrainedError') throw erro;
+          cam = await navigator.mediaDevices.getUserMedia({ video: true }); // sem microfone
+        }
+        comp.definirWebcam(cam);
+        cam.getVideoTracks()[0]?.addEventListener('ended', () => { comp.definirWebcam(null); atualizarBotoes(); });
+      } catch (erro) {
+        avisar(mensagemDeErro(erro));
+      }
+    }
+    atualizarBotoes();
+  }
+
+  // Arrastar a webcam direto na prévia: o ponteiro move o centro dela dentro do quadro 16:9.
+  function pontoNoQuadro(evento) {
+    const caixa = tela.getBoundingClientRect();
+    const proporcao = LARGURA / ALTURA;
+    let largura = caixa.width;
+    let altura = caixa.height;
+    if (largura / altura > proporcao) largura = altura * proporcao; else altura = largura / proporcao;
+    const x0 = caixa.left + (caixa.width - largura) / 2;
+    const y0 = caixa.top + (caixa.height - altura) / 2;
+    return [(evento.clientX - x0) / largura, (evento.clientY - y0) / altura];
+  }
+  let arrastando = false;
+  tela.addEventListener('pointerdown', (e) => {
+    const comp = criador.composicao;
+    if (!comp?.temWebcam() || !comp.sobreWebcam(...pontoNoQuadro(e))) return;
+    arrastando = true;
+    tela.setPointerCapture(e.pointerId);
+    tela.classList.add('arrastando');
+    e.preventDefault();
+  });
+  tela.addEventListener('pointermove', (e) => {
+    const comp = criador.composicao;
+    if (!comp?.temWebcam()) return;
+    if (arrastando) comp.centralizarEm(...pontoNoQuadro(e));
+    else tela.classList.toggle('sobre-webcam', comp.sobreWebcam(...pontoNoQuadro(e)));
+  });
+  const soltar = () => { arrastando = false; tela.classList.remove('arrastando'); };
+  tela.addEventListener('pointerup', soltar);
+  tela.addEventListener('pointercancel', soltar);
+
+  botaoWebcam.addEventListener('click', alternarWebcam);
+  painelWebcam.querySelectorAll('[data-canto]').forEach((b) => b.addEventListener('click', () => criador.composicao?.irParaCanto(b.dataset.canto)));
+  $('#webcam-tamanho').addEventListener('change', (e) => criador.composicao?.definirTamanho(e.target.value));
 
   // ---------------- espectador ----------------
   function fecharEspectador() {
@@ -212,6 +292,10 @@ export function criarVideo({ estado, api, avisar, $ }) {
     botaoCamera.hidden = !ehCriador || transmitindo;
     botaoTela.hidden = !ehCriador || transmitindo;
     botaoParar.hidden = !ehCriador || !transmitindo;
+    const comp = criador.composicao;
+    painelWebcam.hidden = !ehCriador || !comp;
+    opcoesWebcam.hidden = !comp?.temWebcam();
+    botaoWebcam.textContent = comp?.temWebcam() ? 'Remover webcam' : 'Adicionar webcam';
   }
 
   /** Chamado a cada atualização da página com a live no ar (ou null). */

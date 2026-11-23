@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CA-01 · Duas telas</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/estilo.css">
+  <style>
+    body { display: flex; flex-direction: column; height: 100vh; margin: 0; }
+    .barra-demo { display: flex; flex-wrap: wrap; gap: var(--espaco-3); align-items: baseline; justify-content: space-between; padding: var(--espaco-2) var(--espaco-5); border-bottom: 1px solid var(--borda); }
+    .barra-demo h1 { margin: 0; font-size: var(--texto-g); }
+    .barra-demo p { margin: 0; color: var(--texto-suave); }
+    .barra-demo a { color: var(--texto-suave); }
+    .telas { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 1px; min-height: 0; background: var(--borda); }
+    .tela-demo { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--fundo); }
+    .tela-demo > h2 { margin: 0; padding: var(--espaco-1) var(--espaco-5); font-size: var(--texto-m); color: var(--texto-suave); border-bottom: 1px solid var(--borda); }
+    .tela-demo iframe { flex: 1; width: 100%; border: 0; min-height: 0; }
+    @media (max-width: 900px) { .telas { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="barra-demo">
+    <h1>CA-01 · Criador e espectador lado a lado</h1>
+    <p>Entre como criador à esquerda (senha + código do autenticador), abra a live e ative a câmera; a direita mostra o que o espectador vê.</p>
+    <a href="/">Tela única</a>
+  </header>
+  <div class="telas">
+    <section class="tela-demo"><h2>Criador</h2>
+      <iframe title="Criador" src="/?papel=criador" allow="camera; microphone; display-capture; autoplay"></iframe></section>
+    <section class="tela-demo"><h2>Espectador</h2>
+      <iframe title="Espectador" src="/?papel=espectador" allow="autoplay"></iframe></section>
+  </div>
+</body>
+</html>
