@@ -10,6 +10,13 @@ npm test -w @g6/shared-kernel
 npm run typecheck -w @g6/shared-kernel
 ```
 
+## Referência da API
+
+A referência completa de tipos, ports, eventos e do kit de testes, gerada com TypeDoc a partir
+do TSDoc de cada arquivo, está em [`docs/api`](docs/api/README.md) (extra E9, #22). Para
+regenerar depois de mudar o contrato: `npm run kernel --prefix scripts/documentacao`
+(detalhes em [`scripts/documentacao`](../../scripts/documentacao/README.md)).
+
 ## Usando Fakes e Suítes de Contrato em outros pacotes
 
 Para testar a integração dos seus pacotes isoladamente, utilize os fakes exportados de `@g6/shared-kernel/testing`. Eles imitam os ports vizinhos e gravam o histórico de chamadas em memória para as suas assertions.

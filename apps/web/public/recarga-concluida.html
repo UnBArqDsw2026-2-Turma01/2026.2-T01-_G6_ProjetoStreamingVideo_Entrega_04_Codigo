@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pagamento concluído</title>
+  <link rel="stylesheet" href="/estilo.css">
+  <style>
+    body { min-height: 100vh; display: grid; place-items: center; text-align: center; }
+    h1 { font-size: 20px; margin: 0 0 var(--espaco-2); }
+    p { margin: 0; color: var(--texto-suave); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Pagamento concluído</h1>
+    <p>Pode voltar à aba anterior.</p>
+  </main>
+  <script>
+    // Avisa a aba da compra, que verifica o pagamento sozinha.
+    try { new BroadcastChannel('g6-recarga').postMessage('concluida'); } catch {}
+  </script>
+</body>
+</html>

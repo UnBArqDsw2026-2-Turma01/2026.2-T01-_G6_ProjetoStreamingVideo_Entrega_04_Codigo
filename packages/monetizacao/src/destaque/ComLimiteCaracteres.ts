@@ -1,5 +1,5 @@
 import { ErroDestaque } from "./ErroDestaque";
-import type { MensagemDestacada } from "./MensagemDestacada";
+import type { MensagemEmCamadas } from "./MensagemEmCamadas";
 import { MensagemDecorator } from "./MensagemDecorator";
 
 /**
@@ -11,7 +11,7 @@ import { MensagemDecorator } from "./MensagemDecorator";
 export class ComLimiteCaracteres extends MensagemDecorator {
   private readonly limite: number;
 
-  constructor(interna: MensagemDestacada, limite: number) {
+  constructor(interna: MensagemEmCamadas, limite: number) {
     super(interna);
     if (!Number.isInteger(limite) || limite <= 0) {
       throw new ErroDestaque(`O limite de caracteres deve ser um número inteiro positivo: ${limite}`);

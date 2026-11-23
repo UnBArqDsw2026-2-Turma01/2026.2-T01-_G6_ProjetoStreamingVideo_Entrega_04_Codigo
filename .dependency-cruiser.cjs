@@ -4,7 +4,10 @@
  * - Um contexto (`packages/<contexto>`) só conhece o próprio código e o
  *   `@g6/shared-kernel`; nunca outro contexto nem um app.
  * - O `shared-kernel` não depende de nada do monorepo.
- * - Só `apps/*` compõem módulos reais e ficam livres dessas restrições.
+ * - Só `apps/*` compõem módulos reais, e pelo ponto de entrada público de cada
+ *   pacote (`@g6/<pacote>`), nunca por caminho relativo até `packages/<x>/src` (RD1).
+ * - Dentro de `transmissao`, `configuracao` e `canal` não se importam (RD6).
+ * - `src/` de produção não importa `@g6/shared-kernel/testing` (RD7).
  *
  * Os caminhos são ancorados na raiz do monorepo ou na da violação proposital
  * (`scripts/arquitetura/violacao-proposital/`, que reproduz a mesma estrutura
@@ -50,6 +53,51 @@ module.exports = {
         couldNotResolve: false,
         dependencyTypesNot: ['core'],
         pathNot: [`${raiz}packages/shared-kernel/`, npm],
+      },
+    },
+    {
+      // RD6 (Visão Lógica; ADR-009): `transmissao` tem dois donos. A configuração (Builder,
+      // SubEquipe_01) e o canal (Observer, SubEquipe_03) não se importam; só `servico` liga os dois.
+      name: 'rd6-configuracao-nao-importa-canal',
+      severity: 'error',
+      comment:
+        'transmissao/src/configuracao não pode importar transmissao/src/canal: só transmissao/src/servico liga os dois (RD6, ADR-009).',
+      from: { path: `${raiz}packages/transmissao/src/configuracao/` },
+      to: { path: `${raiz}packages/transmissao/src/canal/` },
+    },
+    {
+      name: 'rd6-canal-nao-importa-configuracao',
+      severity: 'error',
+      comment:
+        'transmissao/src/canal não pode importar transmissao/src/configuracao: recebe a StreamConfig por tipagem estrutural, e só transmissao/src/servico liga os dois (RD6, ADR-009).',
+      from: { path: `${raiz}packages/transmissao/src/canal/` },
+      to: { path: `${raiz}packages/transmissao/src/configuracao/` },
+    },
+    {
+      // RD7: fakes e suítes de contrato (`@g6/shared-kernel/testing`) são kit de teste. Código de
+      // produção (`src/` de um pacote ou app) que os importe roda com fakes no lugar dos módulos reais.
+      name: 'rd7-testing-so-em-testes',
+      severity: 'error',
+      comment:
+        'src/ de produção não pode importar @g6/shared-kernel/testing: fakes e suítes de contrato ficam em test/ (RD7).',
+      from: {
+        path: `${raiz}(?:packages|apps)/[^/]+/src/`,
+        pathNot: `${raiz}packages/shared-kernel/src/testing/`,
+      },
+      to: { path: `${raiz}packages/shared-kernel/src/testing/` },
+    },
+    {
+      // RD1: apps compõem os módulos pelo ponto de entrada público de cada pacote (`@g6/<pacote>`,
+      // que o depcruise marca como "undetermined"). Um caminho relativo até `packages/<x>/src/...`
+      // (tipo "local") contorna o `exports` do package.json e acopla o app ao interior do contexto.
+      name: 'app-so-pela-api-publica',
+      severity: 'error',
+      comment:
+        'apps/* só importam um pacote por @g6/<pacote> (ponto de entrada público), nunca por caminho relativo até packages/<pacote>/src (RD1).',
+      from: { path: `${raiz}apps/` },
+      to: {
+        dependencyTypes: ['local'],
+        path: `${raiz}packages/`,
       },
     },
     {

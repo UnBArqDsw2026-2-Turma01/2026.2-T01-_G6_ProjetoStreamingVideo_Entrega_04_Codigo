@@ -3,7 +3,7 @@ import { ComFixacao } from "../../src/destaque/ComFixacao";
 import { ComLimiteCaracteres } from "../../src/destaque/ComLimiteCaracteres";
 import { ErroDestaque } from "../../src/destaque/ErroDestaque";
 import { MensagemBase } from "../../src/destaque/MensagemBase";
-import type { MensagemDestacada } from "../../src/destaque/MensagemDestacada";
+import type { MensagemEmCamadas } from "../../src/destaque/MensagemEmCamadas";
 
 function base(texto = "Valeu pela live!"): MensagemBase {
   return new MensagemBase("Espectador", texto, 2000);
@@ -94,7 +94,7 @@ describe("ComLimiteCaracteres", () => {
 
 describe("Empilhamento das camadas (Decorator)", () => {
   test("as camadas se combinam e cada uma mexe só na sua parte", () => {
-    let mensagem: MensagemDestacada = base("Valeu!");
+    let mensagem: MensagemEmCamadas = base("Valeu!");
     mensagem = new ComLimiteCaracteres(mensagem, 10);
     mensagem = new ComFaixaCor(mensagem, "LARANJA");
     mensagem = new ComFixacao(mensagem, 10);

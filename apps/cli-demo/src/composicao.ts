@@ -14,17 +14,10 @@ import {
 import { criarAutenticacaoExemplo } from '@g6/identidade';
 import { TransmissaoService, type IObserver, type StreamEvent } from '@g6/transmissao';
 import { ConteudoDeLive } from '@g6/conteudo';
-import { RecargaService, gatewaysDoAmbiente } from '@g6/monetizacao';
 import { ChatService } from '@g6/chat';
 import { ModeracaoService } from '@g6/moderacao';
-// A doação, o financeiro e as entidades de apoio ainda não saem no index de @g6/monetizacao.
-// Como apps/* é o composition root, importamos da fonte do pacote, como o teste de integração
-// já existente. Quando `@g6/monetizacao` exportar a montagem da doação, o serviço financeiro, o
-// repositório e `Usuario` no `index.ts`, estas quatro linhas viram um import único de `@g6/monetizacao`.
-import { montarDoacao } from '../../../packages/monetizacao/src/doacao';
-import { RepositorioEmMemoria } from '../../../packages/monetizacao/src/comum/compartilhado';
-import { Usuario } from '../../../packages/monetizacao/src/comum/dominio';
-import { ServicoFinanceiro } from '../../../packages/monetizacao/src/comum/financeiro';
+// Recarga, doação e as entidades de apoio vêm do ponto de entrada público de @g6/monetizacao.
+import { gatewaysDoAmbiente, montarDoacao, RecargaService, RepositorioEmMemoria, ServicoFinanceiro, Usuario } from '@g6/monetizacao';
 
 /** Os dois ids são os das contas de demonstração do pacote `@g6/identidade`. */
 export const ID_CRIADOR = 'criador-ca01';

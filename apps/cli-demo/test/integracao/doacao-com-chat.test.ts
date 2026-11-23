@@ -10,12 +10,8 @@ import {
 } from '@g6/shared-kernel';
 import { FakeModeracao, FakeTransmissao } from '@g6/shared-kernel/testing';
 import { ChatService } from '@g6/chat';
-// A doação (montarDoacao) e as entidades de apoio ainda não são exportadas por @g6/monetizacao;
-// como apps/* é o composition root, o teste as importa direto da fonte do pacote.
-import { montarDoacao } from '../../../../packages/monetizacao/src/doacao';
-import { RepositorioEmMemoria } from '../../../../packages/monetizacao/src/comum/compartilhado';
-import { Usuario } from '../../../../packages/monetizacao/src/comum/dominio';
-import { ServicoFinanceiro } from '../../../../packages/monetizacao/src/comum/financeiro';
+// A doação (montarDoacao) e as entidades de apoio vêm do ponto de entrada público de @g6/monetizacao.
+import { montarDoacao, RepositorioEmMemoria, ServicoFinanceiro, Usuario } from '@g6/monetizacao';
 
 /**
  * Integração do fluxo de doação com mensagem destacada usando o ChatService real

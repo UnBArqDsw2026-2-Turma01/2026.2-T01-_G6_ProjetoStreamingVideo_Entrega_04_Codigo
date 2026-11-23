@@ -1,8 +1,8 @@
 import { ErroDestaque } from "./ErroDestaque";
-import type { MensagemDestacada } from "./MensagemDestacada";
+import type { MensagemEmCamadas } from "./MensagemEmCamadas";
 
 /** ConcreteComponent: a mensagem da doação como chegou, sem nenhum destaque aplicado. */
-export class MensagemBase implements MensagemDestacada {
+export class MensagemBase implements MensagemEmCamadas {
   private readonly autor: string;
   private readonly conteudo: string;
   private readonly quantidadeMoedaVirtual: number;

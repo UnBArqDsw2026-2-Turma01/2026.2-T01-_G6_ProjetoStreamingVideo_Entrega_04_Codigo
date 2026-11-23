@@ -9,7 +9,7 @@ import { ComLimiteCaracteres } from "./ComLimiteCaracteres";
 import { ErroDestaque } from "./ErroDestaque";
 import { FaixaDestaque } from "./FaixaDestaque";
 import { MensagemBase } from "./MensagemBase";
-import type { MensagemDestacada } from "./MensagemDestacada";
+import type { MensagemEmCamadas } from "./MensagemEmCamadas";
 
 /**
  * O que o Decorator não calcula e o DTO do shared-kernel exige: quem escreveu a
@@ -34,10 +34,10 @@ export function empilharDestaques(
   nomeAutor: string,
   texto: string,
   valor: MoedaVirtual,
-): MensagemDestacada {
+): MensagemEmCamadas {
   const faixa = FaixaDestaque.paraQuantidade(valor);
 
-  let mensagem: MensagemDestacada = new MensagemBase(nomeAutor, texto, valor);
+  let mensagem: MensagemEmCamadas = new MensagemBase(nomeAutor, texto, valor);
   mensagem = new ComLimiteCaracteres(mensagem, faixa.limiteCaracteres);
   mensagem = new ComFaixaCor(mensagem, faixa.cor);
   if (faixa.tempoFixacaoMin > 0) {

@@ -78,11 +78,101 @@ function quantidadeAnimada(n) {
 const reais = (c) => (c / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const imposto = (o) => /imposto de (\d+(?:[.,]\d+)?)%/.exec(o.composicao)?.[1];
 
+// Meios de pagamento que o servidor oferece (o simulado sempre; Mercado Pago e Stripe só com credencial de teste).
+const NOMES_MEIO = { simulado: 'Simulado', mercadopago: 'Mercado Pago', stripe: 'Stripe' };
+function mostrarMeios(meios) {
+  const select = $('#meio');
+  const chave = meios.join(',');
+  if (select.dataset.chave === chave) return;
+  select.dataset.chave = chave;
+  const atual = select.value;
+  select.replaceChildren(...meios.map((m) => Object.assign(document.createElement('option'), { value: m, textContent: NOMES_MEIO[m] ?? m })));
+  if (meios.includes(atual)) select.value = atual;
+}
+
+// O checkout de um meio real abre em outra aba. Esta aba guarda o pedido pendente e verifica sozinha
+// quando o processador devolve a outra aba como concluída (aviso por BroadcastChannel) ou quando o
+// usuário volta para cá; "Já paguei" continua disponível para verificar na mão.
+const CHAVE_CHECKOUT = 'g6-checkout-pendente';
+function guardarCheckout(checkout) {
+  try {
+    if (checkout) sessionStorage.setItem(CHAVE_CHECKOUT, JSON.stringify(checkout));
+    else sessionStorage.removeItem(CHAVE_CHECKOUT);
+  } catch {}
+}
+function checkoutGuardado() {
+  try { return JSON.parse(sessionStorage.getItem(CHAVE_CHECKOUT) ?? 'null'); } catch { return null; }
+}
+
+function mostrarCheckout(checkout, jaAbriu = false) {
+  const simulado = checkout.meio === 'simulado';
+  $('#checkout').hidden = false;
+  $('#checkout-texto').innerHTML = `${checkout.moedaACreditar.toLocaleString('pt-BR')} ${ESTRELA} por ${reais(checkout.valorCobradoCentavos)} · ${NOMES_MEIO[checkout.meio] ?? checkout.meio}`;
+  const confirmar = $('#confirmar');
+  confirmar.textContent = simulado ? 'Confirmar pagamento simulado' : 'Já paguei';
+  // Nos meios reais, "Já paguei" só aparece depois de abrir o checkout.
+  confirmar.hidden = !simulado && !jaAbriu;
+  const link = $('#abrir-checkout');
+  link.hidden = simulado;
+  if (!simulado) link.href = checkout.instrucoes;
+  $('#checkout-nota').textContent = '';
+}
+
+$('#abrir-checkout').addEventListener('click', () => {
+  guardarCheckout(estado.checkout);
+  $('#confirmar').hidden = false;
+});
+
+/** Verifica sem alarde: se o processador ainda não confirmou, não mostra erro (o usuário pode estar pagando). */
+let verificando = false;
+async function verificarEmSilencio() {
+  if (verificando || !estado.checkout || estado.checkout.meio === 'simulado' || !checkoutGuardado()) return;
+  verificando = true;
+  try {
+    await confirmarRecarga();
+    avisar('Pagamento confirmado: moedas creditadas', true);
+  } catch {
+    // ainda pendente: segue aguardando
+  } finally {
+    verificando = false;
+  }
+}
+
+let canalRecarga = null;
+try { canalRecarga = new BroadcastChannel('g6-recarga'); } catch {}
+canalRecarga?.addEventListener('message', (e) => { if (e.data === 'concluida') verificarEmSilencio(); });
+window.addEventListener('focus', () => verificarEmSilencio());
+
+
+
+async function confirmarRecarga() {
+  await api('POST', `/api/recarga/${estado.checkout.recargaId}/confirmar`);
+  estado.checkout = null;
+  guardarCheckout(null);
+  $('#checkout').hidden = true;
+  await carregarOfertas();
+}
+
+/** Ao recarregar a página com um pedido pendente: retoma o pedido ("Já paguei" fica disponível). */
+async function retomarCheckout() {
+  const guardado = checkoutGuardado();
+  if (!guardado || estado.checkout) return;
+  estado.checkout = guardado;
+  mostrarCheckout(guardado, true);
+}
+
 async function carregarOfertas() {
   if (!estado.token) return; // qualquer conta logada recarrega (o criador também doa em outras lives)
-  const [saldo, ofertas] = await Promise.all([api('GET', '/api/saldo'), api('GET', '/api/recarga/ofertas')]);
+  const [saldo, ofertas, meios] = await Promise.all([api('GET', '/api/saldo'), api('GET', '/api/recarga/ofertas'), api('GET', '/api/recarga/meios')]);
+  mostrarMeios(meios);
+  // Depois de desenhar o painel (senão o saldo antigo sobrescreveria o novo).
+  if (checkoutGuardado() && !estado.checkout) setTimeout(() => retomarCheckout().catch((e) => avisar(e.message)), 0);
   $('#saldo').textContent = saldo.moeda.toLocaleString('pt-BR');
   $('#saldo-doacao').textContent = saldo.moeda.toLocaleString('pt-BR');
+  // Repasse das doações recebidas (criador): R$ por moeda, creditado pela doação real (#11).
+  const ganhos = saldo.ganhosCentavos ?? 0;
+  $('#ganhos').hidden = !(ganhos > 0 || estado.papel === 'criador');
+  $('#ganhos-valor').textContent = reais(ganhos);
   const caixa = $('#ofertas');
   // Só redesenha quando as ofertas mudam: redesenhar a cada atualização cortaria as animações de hover.
   const chave = JSON.stringify(ofertas);
@@ -105,22 +195,16 @@ async function carregarOfertas() {
       <span class="preco"><span>R$</span> ${(o.precoCentavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
       ${taxa ? `<small>(Imposto de ${taxa}% incluso)</small>` : ''}`;
     botao.addEventListener('click', () => tentar(async () => {
-      estado.checkout = await api('POST', '/api/recarga', { pacote: o.pacote, meio: 'simulado' });
+      estado.checkout = await api('POST', '/api/recarga', { pacote: o.pacote, meio: $('#meio').value || 'simulado' });
       caixa.querySelectorAll('.pacote').forEach((p) => p.classList.toggle('selecionado', p === botao));
-      $('#checkout').hidden = false;
-      $('#checkout-texto').innerHTML = `${estado.checkout.moedaACreditar.toLocaleString('pt-BR')} ${ESTRELA} por ${reais(estado.checkout.valorCobradoCentavos)}`;
+      guardarCheckout(null);
+      mostrarCheckout(estado.checkout);
     }));
     return botao;
   }));
 }
 
-$('#confirmar').addEventListener('click', () =>
-  tentar(async () => {
-    await api('POST', `/api/recarga/${estado.checkout.recargaId}/confirmar`);
-    estado.checkout = null;
-    $('#checkout').hidden = true;
-    await carregarOfertas();
-  }, 'Pagamento confirmado: moedas creditadas'));
+$('#confirmar').addEventListener('click', () => tentar(confirmarRecarga, 'Pagamento confirmado: moedas creditadas'));
 
 // ---- doação com mensagem destacada ----
 let faixas = [];
@@ -207,10 +291,11 @@ formDoacao.addEventListener('submit', (e) => {
   const erro = $('#erro-doacao');
   erro.hidden = true;
   api('POST', `/api/lives/${estado.live.live}/doacoes`, { valor: Number(campoValor.value), mensagem: campoMensagem.value || undefined })
-    .then(async () => {
+    .then(async (comprovante) => {
       campoMensagem.value = '';
       dialogo.close();
-      avisar('Doação enviada', true);
+      // A doação real avisa quando a mensagem não saiu destacada (valor abaixo da faixa ou chat recusou).
+      avisar(comprovante?.aviso ? `Doação enviada. ${comprovante.aviso}` : 'Doação enviada', true);
       await carregarOfertas();
     })
     .catch((e) => {

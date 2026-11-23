@@ -46,6 +46,7 @@ export interface ModerationPayload {
   confidenceScore: number; // 0.0 a 1.0
   actionApplied: string;
   moderatorId?: string; // ID do moderador se foi humano, ou 'AUTOMOD_AI'
+  authorId?: string; // Quem enviou a mensagem de chat (CHAT_MESSAGE_SENT)
   timestamp: Date;
 }
 

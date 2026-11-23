@@ -26,6 +26,7 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             scripts/arquitetura/package-lock.json
+            scripts/documentacao/package-lock.json
 
       - name: Install root dependencies
         run: npm ci
@@ -41,3 +42,18 @@ jobs:
 
       - name: Architecture
         run: npm run verificar --prefix scripts/arquitetura
+
+      # Prova de que as regras não dão falso verde: a violação proposital precisa falhar.
+      - name: Architecture rules catch the deliberate violations
+        run: |
+          if npm run violacao --prefix scripts/arquitetura; then
+            echo "As regras de arquitetura deixaram passar a violação proposital." >&2
+            exit 1
+          fi
+
+      - name: Install documentation dependencies
+        run: npm ci --prefix scripts/documentacao
+
+      # A referência do shared-kernel (E9) é commitada; o PR que muda o contrato a regenera.
+      - name: Shared-kernel reference is up to date
+        run: npm run kernel:conferir --prefix scripts/documentacao

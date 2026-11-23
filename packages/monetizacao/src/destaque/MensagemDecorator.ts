@@ -1,14 +1,14 @@
-import type { MensagemDestacada } from "./MensagemDestacada";
+import type { MensagemEmCamadas } from "./MensagemEmCamadas";
 
 /**
- * Decorator: é uma `MensagemDestacada` e tem uma `MensagemDestacada` (a que ele envolve).
+ * Decorator: é uma `MensagemEmCamadas` e tem uma `MensagemEmCamadas` (a que ele envolve).
  * Por padrão apenas delega; cada subclasse acrescenta a sua camada de destaque
  * sobre o resultado da camada interna.
  */
-export abstract class MensagemDecorator implements MensagemDestacada {
-  protected readonly interna: MensagemDestacada;
+export abstract class MensagemDecorator implements MensagemEmCamadas {
+  protected readonly interna: MensagemEmCamadas;
 
-  protected constructor(interna: MensagemDestacada) {
+  protected constructor(interna: MensagemEmCamadas) {
     this.interna = interna;
   }
 

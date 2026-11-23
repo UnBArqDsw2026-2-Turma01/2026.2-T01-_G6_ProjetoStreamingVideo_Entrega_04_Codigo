@@ -6,6 +6,18 @@ import assert from 'node:assert';
 import path from 'node:path';
 import { StreamChannel } from '../../src/canal/observer/StreamChannel.js';
 import { AutoModObserver } from '../../src/canal/observer/observers/AutoModObserver.js';
+import type { MensagemChat, ModeracaoPort, VereditoModeracao } from '@g6/shared-kernel';
+
+/** ModeracaoPort de teste: o AutoMod real é testado em @g6/moderacao; aqui só importa a delegação. */
+class ModeracaoDeTeste implements ModeracaoPort {
+  readonly avaliadas: MensagemChat[] = [];
+  async avaliar(mensagem: MensagemChat): Promise<VereditoModeracao> {
+    this.avaliadas.push(mensagem);
+    if (/a{10,}/.test(mensagem.texto)) return { decisao: 'bloqueada', motivo: 'flood' };
+    if (/h@ck|aimbot|robux/i.test(mensagem.texto)) return { decisao: 'bloqueada', motivo: 'toxicidade ou phishing' };
+    return { decisao: 'aprovada', motivo: 'ok' };
+  }
+}
 import { SafetyVisionModerationObserver } from '../../src/canal/observer/observers/SafetyVisionModerationObserver.js';
 import { CopyrightDMCAAudioObserver } from '../../src/canal/observer/observers/CopyrightDMCAAudioObserver.js';
 import { HumanModeratorDashboardObserver } from '../../src/canal/observer/observers/HumanModeratorDashboardObserver.js';
@@ -19,7 +31,7 @@ describe('Padrão GoF Observer com Moderação Reativa Completa - SubEquipe 03',
 
   it('deve registrar (attach), desanexar (detach) observadores e inspecionar estado (getState)', () => {
     const channel = new StreamChannel('dima_wallhacks', 'Dima Wallhacks', 'TWITCH');
-    const autoMod = new AutoModObserver('obs-auto', 'AutoMod');
+    const autoMod = new AutoModObserver(new ModeracaoDeTeste(), 'obs-auto', 'AutoMod');
     const dmca = new CopyrightDMCAAudioObserver('obs-dmca', 'DMCA');
 
     assert.strictEqual(channel.getObserversCount(), 0);
@@ -57,25 +69,27 @@ describe('Padrão GoF Observer com Moderação Reativa Completa - SubEquipe 03',
     assert.strictEqual(ytChannel.getStatus(), 'OFFLINE');
   });
 
-  it('AutoMod: deve analisar matematicamente a Entropia de Shannon e reter spam/toxicidade', async () => {
+  it('AutoMod: delega cada mensagem de chat ao ModeracaoPort e retém as não aprovadas', async () => {
     const channel = new StreamChannel('eskimozin', 'eskimozin', 'KICK');
-    const autoMod = new AutoModObserver('obs-automod', 'AutoMod AI');
+    const moderacao = new ModeracaoDeTeste();
+    const autoMod = new AutoModObserver(moderacao, 'obs-automod', 'AutoMod AI');
     channel.attach(autoMod);
 
-    // 1. Mensagem repetitiva (baixa entropia)
+    // 1. Mensagem repetitiva (flood)
     const lowEntropyReport = await channel.processChatMessage('troll123', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
     assert.strictEqual(lowEntropyReport.successful, 1);
 
-    // 2. Mensagem com termos tóxicos normalizados de leetspeak
+    // 2. Mensagem tóxica com leetspeak
     await channel.processChatMessage('cheater', 'use this h@ck and aimbot wallhack now');
 
-    // 3. Phishing link
-    await channel.processChatMessage('spambot', 'claim your free-robux.site right now free_bits');
+    // 3. Mensagem comum: aprovada, não é retida
+    await channel.processChatMessage('fan', 'boa live!');
 
-    assert.strictEqual(autoMod.getFilteredCount() >= 2, true);
+    assert.strictEqual(moderacao.avaliadas.length, 3);
+    assert.strictEqual(moderacao.avaliadas[1]?.autor, 'cheater');
+    assert.strictEqual(autoMod.getFilteredCount(), 2);
     const logs = autoMod.getLogs();
-    assert.strictEqual(logs.length >= 2, true);
-    assert.ok(logs.some(l => l.violations.length > 0));
+    assert.ok(logs.every(l => l.decisao === 'bloqueada' && l.violations.length > 0));
   });
 
   it('Safety Vision AI: deve ler imagem PPM real e acionar Content Warning (Gate 18+) para Nudez', async () => {

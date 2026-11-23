@@ -48,23 +48,27 @@ test('CA-01: live → recarga → doação destacada → chat → VOD', async ()
     assert.equal(confirmada.corpo.situacao, 'concluida');
     assert.equal((await chamar('GET', '/api/saldo', espectador)).corpo.moeda, 100);
 
-    // 100 de saldo não alcança a faixa mínima de destaque (200): rejeitado sem debitar.
+    // Doação real (#11) abaixo da faixa mínima de destaque (200): passa, mas sem mensagem destacada.
     const curta = await chamar('POST', `/api/lives/${id}/doacoes`, espectador, { valor: 100, mensagem: 'Boa!' });
-    assert.equal(curta.status, 422);
-    assert.equal(curta.corpo.codigo, 'VALOR_ABAIXO_DO_MINIMO');
-    assert.equal((await chamar('GET', '/api/saldo', espectador)).corpo.moeda, 100);
+    assert.equal(curta.status, 200);
+    assert.equal(curta.corpo.destaqueEntregue, false);
+    assert.match(curta.corpo.aviso, /sem destaque/);
+    assert.equal((await chamar('GET', '/api/saldo', espectador)).corpo.moeda, 0);
+    // O criador recebe o repasse em dinheiro: R$ 0,02 por moeda.
+    assert.equal((await chamar('GET', '/api/saldo', criador)).corpo.ganhosCentavos, 200);
 
-    // Mais uma recarga e doação de 200 com mensagem: sai destacada (azul) no chat.
-    const c2 = await chamar('POST', '/api/recarga', espectador, { pacote, meio: 'simulado' });
-    await chamar('POST', `/api/recarga/${c2.corpo.recargaId}/confirmar`, espectador);
-    const c3 = await chamar('POST', '/api/recarga', espectador, { pacote, meio: 'simulado' });
-    await chamar('POST', `/api/recarga/${c3.corpo.recargaId}/confirmar`, espectador);
+    // Mais recargas e doação de 200 com mensagem: sai destacada (azul) no chat.
+    for (let i = 0; i < 3; i++) {
+      const c = await chamar('POST', '/api/recarga', espectador, { pacote, meio: 'simulado' });
+      await chamar('POST', `/api/recarga/${c.corpo.recargaId}/confirmar`, espectador);
+    }
     assert.equal((await chamar('GET', '/api/saldo', espectador)).corpo.moeda, 300);
 
     const doacao = await chamar('POST', `/api/lives/${id}/doacoes`, espectador, { valor: 200, mensagem: 'Parabéns!' });
     assert.equal(doacao.status, 200);
     assert.equal(doacao.corpo.destaqueEntregue, true);
     assert.equal((await chamar('GET', '/api/saldo', espectador)).corpo.moeda, 100);
+    assert.equal((await chamar('GET', '/api/saldo', criador)).corpo.ganhosCentavos, 600);
 
     const { value } = await leitor.read();
     const evento = JSON.parse(new TextDecoder().decode(value).replace(/^data: /, ''));
@@ -119,6 +123,9 @@ test('recarga oferece o catálogo com desconto e imposto; faixas vêm da API', a
     const checkout = await chamar('POST', '/api/recarga', espectador, { pacote: maior.pacote, meio: 'simulado' });
     assert.equal(checkout.corpo.moedaACreditar, 28000);
     assert.equal(checkout.corpo.valorCobradoCentavos, maior.precoCentavos);
+
+    // Sem `.env`, a recarga real oferece só o meio simulado.
+    assert.deepEqual((await chamar('GET', '/api/recarga/meios', espectador)).corpo, ['simulado']);
 
     const faixas = (await chamar('GET', '/api/faixas')).corpo;
     assert.deepEqual(faixas.map((f: { minimo: number }) => f.minimo), [200, 500, 2000, 5000, 50000]);

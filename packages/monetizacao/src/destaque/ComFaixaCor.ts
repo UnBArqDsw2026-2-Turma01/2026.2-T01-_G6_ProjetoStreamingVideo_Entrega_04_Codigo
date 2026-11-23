@@ -1,12 +1,12 @@
 import { ErroDestaque } from "./ErroDestaque";
-import type { MensagemDestacada } from "./MensagemDestacada";
+import type { MensagemEmCamadas } from "./MensagemEmCamadas";
 import { MensagemDecorator } from "./MensagemDecorator";
 
 /** ConcreteDecorator: destaca a mensagem com a cor da faixa do valor doado (SC01). */
 export class ComFaixaCor extends MensagemDecorator {
   private readonly corFaixa: string;
 
-  constructor(interna: MensagemDestacada, cor: string) {
+  constructor(interna: MensagemEmCamadas, cor: string) {
     super(interna);
     if (cor.trim().length === 0) {
       throw new ErroDestaque("A cor da faixa de destaque não pode estar vazia.");

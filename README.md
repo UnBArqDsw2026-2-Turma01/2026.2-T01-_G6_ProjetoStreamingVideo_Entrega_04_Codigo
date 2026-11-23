@@ -21,7 +21,7 @@ flowchart TB
 
 | Pacote | Conteúdo | Testes | Issue |
 | --- | --- | --- | --- |
-| [`packages/shared-kernel`](packages/shared-kernel) | Contrato de integração: tipos comuns, ports, eventos de domínio e EventBus. | node:test | #3, #4 |
+| [`packages/shared-kernel`](packages/shared-kernel) | Contrato de integração: tipos comuns, ports, eventos de domínio e EventBus. [Referência da API](packages/shared-kernel/docs/api/README.md) (TypeDoc). | node:test | #3, #4, #22 |
 | [`packages/identidade`](packages/identidade) | Contexto de identidade e acesso (Chain of Responsibility) · AutenticacaoPort. | node:test | #5 |
 | [`packages/transmissao`](packages/transmissao) | Contexto de transmissão: configuração (Builder) e canal (Observer) · TransmissaoPort. | Vitest + node:test | #6, #7, #8 |
 | [`packages/conteudo`](packages/conteudo) | Contexto de conteúdo gerado pelo usuário (Factory Method) · reage a LiveEncerrada. | Vitest | #9 |
