@@ -110,6 +110,39 @@ describe('TransmissaoService.abrir', () => {
     expect(iniciadas[0]?.live).not.toBe(iniciadas[1]?.live);
   });
 
+  it('a live já é consultável quando LiveIniciada chega ao assinante (o conteudo consulta nesse instante)', async () => {
+    const { servico, eventBus } = montar();
+    const consultas: Array<{ ok: boolean; titulo?: string }> = [];
+    eventBus.assinar('LiveIniciada', (evento) => {
+      // `consultar` lê a live no momento da chamada, antes de qualquer espera: o mesmo que o `conteudo` faz.
+      void servico.consultar(evento.live).then((r) => consultas.push({ ok: r.ok, titulo: r.ok ? r.valor.titulo : undefined }));
+    });
+
+    const resultado = await servico.abrir(sessao('usr_9'), preset('Ao vivo'));
+    await new Promise((resolver) => setImmediate(resolver));
+
+    expect(resultado.ok).toBe(true);
+    expect(consultas).toEqual([{ ok: true, titulo: 'Ao vivo' }]);
+  });
+
+  it('se o goLive falha depois de publicar LiveIniciada, a live não fica consultável e o criador é liberado', async () => {
+    let contador = 0;
+    const { servico, eventBus } = montar({ gerarLiveId: () => liveId(`live_rollback_${++contador}`) });
+    const quebrar = eventBus.assinar('LiveIniciada', () => {
+      throw new Error('assinante quebrado');
+    });
+    const criador = sessao('usr_30');
+
+    const falhou = await servico.abrir(criador, preset());
+    quebrar();
+    const naoEncontrada = await servico.consultar(liveId('live_rollback_1'));
+    const denovo = await servico.abrir(criador, preset());
+
+    expect(falhou).toMatchObject({ ok: false, erro: { codigo: 'FALHA_AO_ABRIR' } });
+    expect(naoEncontrada).toMatchObject({ ok: false, erro: { codigo: 'NAO_ENCONTRADA' } });
+    expect(denovo.ok).toBe(true);
+  });
+
   it('usa o gerador de LiveId injetado', async () => {
     const { servico } = montar({ gerarLiveId: () => liveId('live_fixa') });
 
