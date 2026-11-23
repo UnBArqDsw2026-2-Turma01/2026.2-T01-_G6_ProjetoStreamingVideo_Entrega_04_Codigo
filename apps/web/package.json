@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/servidor.ts",
+    "dev": "tsx src/dev.ts",
     "test": "tsx --test \"test/**/*.test.ts\"",
     "typecheck": "tsc -p tsconfig.json"
   },
