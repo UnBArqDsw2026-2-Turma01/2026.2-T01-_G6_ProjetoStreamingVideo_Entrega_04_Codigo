@@ -41,7 +41,14 @@ export function subir(portas: readonly number[]): void {
   gravacoes.limpar();
   apagarGravacoesAoEncerrar(gravacoes);
   for (const porta of portas) {
-    app.criarServidor().listen(porta, () => console.log(`CA-01 no navegador: http://localhost:${porta}`));
+    const servidor = app.criarServidor();
+    servidor.on('error', (erro: NodeJS.ErrnoException) => {
+      console.error(erro.code === 'EADDRINUSE'
+        ? `Porta ${porta} em uso (outro \`npm run web\`/\`npm run dev\` aberto?). Encerre-o com Ctrl+C ou use outra porta: PORT=4000 npm run dev`
+        : erro.message);
+      process.exit(1);
+    });
+    servidor.listen(porta, () => console.log(`CA-01 no navegador: http://localhost:${porta}`));
   }
 }
 
