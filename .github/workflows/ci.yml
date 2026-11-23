@@ -41,3 +41,11 @@ jobs:
 
       - name: Architecture
         run: npm run verificar --prefix scripts/arquitetura
+
+      # Prova de que as regras não dão falso verde: a violação proposital precisa falhar.
+      - name: Architecture rules catch the deliberate violations
+        run: |
+          if npm run violacao --prefix scripts/arquitetura; then
+            echo "As regras de arquitetura deixaram passar a violação proposital." >&2
+            exit 1
+          fi

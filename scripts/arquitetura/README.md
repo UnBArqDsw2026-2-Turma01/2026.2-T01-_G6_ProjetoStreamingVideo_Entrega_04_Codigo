@@ -8,7 +8,7 @@ npm ci                                    # raiz: cria os symlinks @g6/* que as 
 npm ci --prefix scripts/arquitetura       # dependency-cruiser + typescript 6
 
 npm run verificar --prefix scripts/arquitetura   # regras em packages/ e apps/ (falha se houver violação)
-npm run violacao  --prefix scripts/arquitetura   # violação proposital: deve falhar com 6 erros
+npm run violacao  --prefix scripts/arquitetura   # violação proposital: deve falhar com 10 erros
 npm run grafo     --prefix scripts/arquitetura   # verifica as regras e gera grafo/dependencias.svg
 ```
 
@@ -16,9 +16,12 @@ npm run grafo     --prefix scripts/arquitetura   # verifica as regras e gera gra
 | --- | --- |
 | `contexto-so-importa-shared-kernel` | `packages/<contexto>` importar qualquer módulo local fora dele e do shared-kernel: outro contexto, um app ou outra pasta do repositório |
 | `shared-kernel-isolado` | `packages/shared-kernel` importar qualquer módulo local fora dele |
+| `rd6-configuracao-nao-importa-canal` · `rd6-canal-nao-importa-configuracao` | `transmissao/src/configuracao` e `transmissao/src/canal` se importarem, em qualquer direção; só `transmissao/src/servico` liga os dois (RD6, ADR-009) |
+| `rd7-testing-so-em-testes` | `src/` de produção de um pacote ou app importar `@g6/shared-kernel/testing` (fakes e suítes de contrato ficam em `test/`) (RD7) |
+| `app-so-pela-api-publica` | `apps/*` importarem um pacote por caminho relativo até `packages/<x>/src`, em vez do ponto de entrada `@g6/<x>` (RD1) |
 | `g6-nao-resolvido` | import `@g6/*` que não resolve (sem `npm ci` na raiz, as outras regras não o veriam) |
 
-As duas primeiras regras liberam só dependências npm (`node_modules`) e módulos do Node, e
+As regras de contexto e de kernel liberam só dependências npm (`node_modules`) e módulos do Node, e
 os caminhos são ancorados em `packages/` da raiz (ou da violação proposital): uma pasta
 aninhada como `conteudo/src/packages/chat/` não passa por `chat`.
 
