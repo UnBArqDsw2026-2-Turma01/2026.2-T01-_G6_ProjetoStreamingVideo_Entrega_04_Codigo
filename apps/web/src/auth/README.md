@@ -22,10 +22,14 @@ ficam em **Contas de demonstração**: senha `Exemplo-CA01!`, e-mails
 exibido no autenticador (TOTP SHA-1, 6 dígitos, 30 segundos).
 
 Após o login, a página volta à transmissão e usa o token nas chamadas existentes.
-A sessão fica em `sessionStorage`, restrita à aba; senha e TOTP não são armazenados.
+A sessão fica em `localStorage`, uma por papel, e sobrevive a recarga, nova aba e reinício
+do navegador até expirar (4 h) ou até o servidor reiniciar. Cada aba lembra o papel ativo em
+`sessionStorage`, então criador e espectador podem ficar abertos lado a lado; clicar em
+**Entrar como** um papel que já tem sessão válida não pede senha nem TOTP de novo. Senha e TOTP
+não são armazenados.
 O servidor valida a sessão no retorno. A confirmação de identidade fica no link
 **Confirmar identidade**, usa o mesmo token e exige um código ainda não utilizado.
-**Sair** remove a sessão do navegador; não revoga o token no servidor, que continua
+**Sair** remove do navegador a sessão do papel ativo; não revoga o token no servidor, que continua
 válido até expirar. O contrato atual não oferece logout/revogação pelo port.
 
 ## Integração dentro do escopo

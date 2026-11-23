@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CA-01 · Live com doação destacada</title>
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/estilo.css">
 </head>
 <body>
@@ -35,12 +36,20 @@
           </form>
         </div>
         <div id="no-ar" class="tela" hidden>
+          <video id="video-live" autoplay playsinline muted hidden></video>
+          <p id="aviso-video" class="aviso-video" role="status"></p>
           <span class="selo-ao-vivo">Ao vivo</span>
+          <button type="button" id="ativar-som" class="sec ativar-som" hidden>Ativar som</button>
         </div>
       </section>
       <div class="barra-live">
         <strong id="titulo-barra"></strong>
-        <button id="encerrar" class="sec" hidden>Encerrar live</button>
+        <div class="acoes-live">
+          <button type="button" id="camera-ligar" hidden>Ativar câmera</button>
+          <button type="button" id="tela-ligar" class="sec" hidden>Compartilhar tela</button>
+          <button type="button" id="camera-parar" class="sec" hidden>Parar transmissão</button>
+          <button id="encerrar" class="sec" hidden>Encerrar live</button>
+        </div>
       </div>
 
       <section id="painel-recarga">

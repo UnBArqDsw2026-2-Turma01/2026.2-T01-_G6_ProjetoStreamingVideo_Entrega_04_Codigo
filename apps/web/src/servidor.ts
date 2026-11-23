@@ -5,6 +5,7 @@ import { Aplicacao } from './http/app';
 import { compor } from './ca01';
 import { criarContexto, registrarRotasCA01, type RegistrarRotas } from './rotas';
 import * as auth from './auth';
+import { registrarRotasVideo } from './video';
 
 export function criarAplicacao(): { app: Aplicacao; servico: ReturnType<typeof compor> } {
   const servico = compor();
@@ -12,6 +13,7 @@ export function criarAplicacao(): { app: Aplicacao; servico: ReturnType<typeof c
   const app = new Aplicacao();
 
   registrarRotasCA01(app, contexto);
+  registrarRotasVideo(app, contexto);
 
   // Ponto de extensão: se `src/auth` exportar `registrarRotas(app, contexto)`, ele é chamado aqui.
   const extensao = auth as { registrarRotas?: RegistrarRotas };
