@@ -1,4 +1,5 @@
 // Front-end do CA-01: só fala com a API HTTP (/api/*). Sem dependências nem build.
+import { criarVideo } from '/video.js';
 const $ = (seletor) => document.querySelector(seletor);
 const estado = { token: null, papel: null, live: null, checkout: null, fonte: null };
 
@@ -31,6 +32,9 @@ async function tentar(acao, mensagemOk) {
   }
 }
 
+// ---- câmera da live (WebRTC, ver video.js) ----
+const video = criarVideo({ estado, api, avisar, $ });
+
 // ---- sessão ----
 document.querySelectorAll('[data-papel]').forEach((botao) =>
   botao.addEventListener('click', () =>
@@ -52,7 +56,7 @@ $('#form-live').addEventListener('submit', (e) => {
 });
 
 $('#encerrar').addEventListener('click', () =>
-  tentar(async () => { await api('POST', `/api/lives/${estado.live.live}/encerrar`); await atualizar(); }, 'Live encerrada: a gravação está em Transmissões anteriores'));
+  tentar(async () => { await video.parar(); await api('POST', `/api/lives/${estado.live.live}/encerrar`); await atualizar(); }, 'Live encerrada: a gravação está em Transmissões anteriores'));
 
 // ---- recarga ----
 const ESTRELA = '<svg class="estrela" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.5 5.1 5.6.8-4.05 3.95.95 5.6L12 16.4l-5 2.65.95-5.6L3.9 9.5l5.6-.8z"/></svg>';
@@ -330,6 +334,7 @@ async function atualizar() {
   const nova = lives[0] ?? null;
   if (nova?.live !== estado.live?.live) acompanharChat(nova);
   estado.live = nova;
+  video.sincronizar(nova);
   $('#no-ar').hidden = !nova;
   $('#sem-live').hidden = !!nova;
   $('#titulo-barra').textContent = nova?.titulo ?? '';

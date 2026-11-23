@@ -167,6 +167,14 @@ section, aside { background: var(--superficie); border: 1px solid var(--borda); 
 #form-live { width: min(420px, 90%); }
 .barra-live { display: flex; justify-content: space-between; align-items: center; min-height: 34px; }
 .barra-live strong { font-size: var(--texto-g); }
+.acoes-live { display: flex; flex-wrap: wrap; gap: var(--espaco-2); justify-content: flex-end; }
+.acoes-live button[hidden] { display: none; }
+#video-live { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: var(--video); }
+#video-live[hidden] { display: none; }
+.aviso-video { position: relative; z-index: 1; max-width: 80%; text-align: center; }
+.aviso-video[hidden] { display: none; }
+.selo-ao-vivo { z-index: 2; }
+.ativar-som { position: absolute; z-index: 2; right: var(--espaco-3); bottom: var(--espaco-3); }
 
 /* Recarga */
 .cabecalho-recarga { display: flex; justify-content: space-between; align-items: baseline; }
