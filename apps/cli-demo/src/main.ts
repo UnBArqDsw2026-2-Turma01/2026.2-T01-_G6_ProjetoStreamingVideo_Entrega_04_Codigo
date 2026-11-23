@@ -1,15 +1,20 @@
-import * as shared_kernel from '@g6/shared-kernel';
-import * as identidade from '@g6/identidade';
-import * as transmissao from '@g6/transmissao';
-import * as conteudo from '@g6/conteudo';
-import * as monetizacao from '@g6/monetizacao';
-import * as chat from '@g6/chat';
-import * as moderacao from '@g6/moderacao';
+import { compor } from './composicao';
+import { FalhaNoRoteiro, executarCA01 } from './roteiro';
 
-// Composition root do CA-01: aqui os serviços reais serão instanciados e ligados pelos ports.
-// Por enquanto só confirma que todos os pacotes do workspace carregam. Implementação: #15.
-const pacotes = { shared_kernel, identidade, transmissao, conteudo, monetizacao, chat, moderacao };
+// Ponto de entrada de `npm run demo`: compõe os módulos reais e executa o CA-01 (live com
+// doação destacada) no terminal. Não usa rede. Implementação: #15.
+async function main(): Promise<void> {
+  console.log('CA-01 — Live com doação destacada');
+  console.log('Composição: identidade, transmissão, conteúdo, monetização, chat e moderação reais.');
+  const sistema = await compor();
+  await executarCA01(sistema, console.log);
+}
 
-console.log('CA-01 — Live com doação destacada');
-console.log('Pacotes carregados:', Object.keys(pacotes).join(', '));
-console.log('Roteiro ainda não implementado: ver https://github.com/UnBArqDsw2026-2-Turma01/2026.2-T01-_G6_ProjetoStreamingVideo_Entrega_04_Codigo/issues/15');
+main().catch((erro: unknown) => {
+  if (erro instanceof FalhaNoRoteiro) {
+    console.error(`\n${erro.message}`);
+  } else {
+    console.error(erro);
+  }
+  process.exitCode = 1;
+});
