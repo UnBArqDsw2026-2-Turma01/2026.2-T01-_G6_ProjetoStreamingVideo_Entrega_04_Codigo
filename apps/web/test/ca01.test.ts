@@ -120,6 +120,9 @@ test('recarga oferece o catálogo com desconto e imposto; faixas vêm da API', a
     assert.equal(checkout.corpo.moedaACreditar, 28000);
     assert.equal(checkout.corpo.valorCobradoCentavos, maior.precoCentavos);
 
+    // Sem `.env`, a recarga real oferece só o meio simulado.
+    assert.deepEqual((await chamar('GET', '/api/recarga/meios', espectador)).corpo, ['simulado']);
+
     const faixas = (await chamar('GET', '/api/faixas')).corpo;
     assert.deepEqual(faixas.map((f: { minimo: number }) => f.minimo), [200, 500, 2000, 5000, 50000]);
     assert.deepEqual(faixas[1], { minimo: 500, cor: 'VERDE', fixacaoMin: 2, limite: 150 });

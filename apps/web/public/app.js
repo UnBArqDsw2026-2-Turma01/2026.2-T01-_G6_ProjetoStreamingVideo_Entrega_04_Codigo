@@ -78,9 +78,33 @@ function quantidadeAnimada(n) {
 const reais = (c) => (c / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const imposto = (o) => /imposto de (\d+(?:[.,]\d+)?)%/.exec(o.composicao)?.[1];
 
+// Meios de pagamento que o servidor oferece (o simulado sempre; Mercado Pago e Stripe só com credencial de teste).
+const NOMES_MEIO = { simulado: 'Simulado', mercadopago: 'Mercado Pago', stripe: 'Stripe' };
+function mostrarMeios(meios) {
+  const select = $('#meio');
+  const chave = meios.join(',');
+  if (select.dataset.chave === chave) return;
+  select.dataset.chave = chave;
+  const atual = select.value;
+  select.replaceChildren(...meios.map((m) => Object.assign(document.createElement('option'), { value: m, textContent: NOMES_MEIO[m] ?? m })));
+  if (meios.includes(atual)) select.value = atual;
+}
+
+function mostrarCheckout(checkout) {
+  const simulado = checkout.meio === 'simulado';
+  $('#checkout').hidden = false;
+  $('#checkout-texto').innerHTML = `${checkout.moedaACreditar.toLocaleString('pt-BR')} ${ESTRELA} por ${reais(checkout.valorCobradoCentavos)} · ${NOMES_MEIO[checkout.meio] ?? checkout.meio}`;
+  $('#confirmar').hidden = !simulado;
+  const link = $('#abrir-checkout');
+  link.hidden = simulado;
+  if (!simulado) link.href = checkout.instrucoes;
+  $('#checkout-nota').textContent = simulado ? '' : 'O crédito entra quando o processador confirmar o pagamento.';
+}
+
 async function carregarOfertas() {
   if (!estado.token) return; // qualquer conta logada recarrega (o criador também doa em outras lives)
-  const [saldo, ofertas] = await Promise.all([api('GET', '/api/saldo'), api('GET', '/api/recarga/ofertas')]);
+  const [saldo, ofertas, meios] = await Promise.all([api('GET', '/api/saldo'), api('GET', '/api/recarga/ofertas'), api('GET', '/api/recarga/meios')]);
+  mostrarMeios(meios);
   $('#saldo').textContent = saldo.moeda.toLocaleString('pt-BR');
   $('#saldo-doacao').textContent = saldo.moeda.toLocaleString('pt-BR');
   const caixa = $('#ofertas');
@@ -105,10 +129,9 @@ async function carregarOfertas() {
       <span class="preco"><span>R$</span> ${(o.precoCentavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
       ${taxa ? `<small>(Imposto de ${taxa}% incluso)</small>` : ''}`;
     botao.addEventListener('click', () => tentar(async () => {
-      estado.checkout = await api('POST', '/api/recarga', { pacote: o.pacote, meio: 'simulado' });
+      estado.checkout = await api('POST', '/api/recarga', { pacote: o.pacote, meio: $('#meio').value || 'simulado' });
       caixa.querySelectorAll('.pacote').forEach((p) => p.classList.toggle('selecionado', p === botao));
-      $('#checkout').hidden = false;
-      $('#checkout-texto').innerHTML = `${estado.checkout.moedaACreditar.toLocaleString('pt-BR')} ${ESTRELA} por ${reais(estado.checkout.valorCobradoCentavos)}`;
+      mostrarCheckout(estado.checkout);
     }));
     return botao;
   }));

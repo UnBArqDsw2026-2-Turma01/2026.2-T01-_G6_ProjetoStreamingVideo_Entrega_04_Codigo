@@ -23,5 +23,5 @@ async function acharPar(base: number): Promise<[number, number]> {
 const base = Number(process.env.PORT ?? 3000);
 const [criador, espectador] = await acharPar(base);
 if (criador !== base) console.log(`Portas ${base}/${base + 1} ocupadas (algum npm run web/dev aberto?); usando ${criador}/${espectador}.`);
-subir([criador, espectador]);
+void subir([criador, espectador]);
 console.log(`\nTeste com duas contas:\n  criador    → http://localhost:${criador}\n  espectador → http://localhost:${espectador}\n  (código do criador: npm run totp)\n`);

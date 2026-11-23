@@ -80,5 +80,7 @@ export const registrarRotas: RegistrarRotas = (app, { emitirSessao }) => {
 
 Hoje `compor()` usa os fakes do shared-kernel para todos os ports. Quando cada pacote real entrar na `main`, troque a linha correspondente em `compor()`; rotas e telas não mudam.
 
+- **Recarga: real.** `compor()` usa o `RecargaService` de `@g6/monetizacao` (#10), com o catálogo, os descontos e o imposto dele. "Confirmar pagamento simulado" aprova no processador simulado e entrega o aviso assinado ao Proxy (`receberAviso`), que credita e publica `RecargaConcluida`. O seletor "Pagar com" lista os meios disponíveis: o simulado sempre; Mercado Pago e Stripe só com credencial de **teste** no `.env` da raiz (lido por `npm run web`/`npm run dev`, nunca versionado). Nos meios reais, a página abre o checkout de teste e o crédito depende do aviso do processador. As peças internas que o pacote ainda não exporta (processador simulado, carteiras) são importadas por caminho relativo, como no `apps/cli-demo`.
+
 - Mensagem destacada: `montarDestaque` em `ca01.ts` espelha as faixas de `FaixaDestaque` (#12) até `@g6/monetizacao` exportar `montarMensagemDestacada` no `index.ts`.
 - Saldo e VOD: ficam em memória no `ServicoCA01` até a doação (#11) e o `conteudo` (#9) assumirem.

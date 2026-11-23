@@ -82,6 +82,7 @@ export function registrarRotasCA01(app: App, ctx: Contexto): void {
 
   // Recarga
   app.rota('GET', '/api/saldo', comSessao((sessao) => ok({ moeda: servico.saldo(sessao.usuarioId) })));
+  app.rota('GET', '/api/recarga/meios', comSessao(() => ok(servico.meiosPagamento())));
   app.rota('GET', '/api/recarga/ofertas', comSessao(async (sessao) => deResultado(await servico.ofertas(sessao))));
   app.rota('POST', '/api/recarga', comSessao(async (sessao, req) => {
     const pacote = texto(req.corpo, 'pacote');
