@@ -1,9 +1,38 @@
 // Executado sozinho no login e anexado ao módulo da página integrada por auth/index.ts.
-const CHAVE_LOGIN = 'ca01.sessao';
-function guardarLogin(sessao) { sessionStorage.setItem(CHAVE_LOGIN, JSON.stringify(sessao)); }
+// Persistência: as sessões ficam em localStorage, uma por papel, para sobreviver a recarga, nova aba
+// e reinício do navegador. A aba lembra o papel ativo em sessionStorage, então criador e espectador
+// podem estar abertos lado a lado. Senha e TOTP nunca são armazenados.
+const CHAVE_SESSOES = 'ca01.sessoes';
+const CHAVE_PAPEL_ABA = 'ca01.papel';
+const CHAVE_ULTIMO_PAPEL = 'ca01.ultimo';
+function lerJson(armazenamento, chave, padrao) {
+  try { return JSON.parse(armazenamento.getItem(chave) || 'null') ?? padrao; }
+  catch { try { armazenamento.removeItem(chave); } catch { /* ignora */ } return padrao; }
+}
+const vigente = (sessao) => !!sessao?.token && new Date(sessao.expiraEm).getTime() > Date.now();
+function lerSessoes() { return lerJson(localStorage, CHAVE_SESSOES, {}); }
+function guardarLogin(sessao) {
+  const sessoes = lerSessoes();
+  sessoes[sessao.papel] = sessao;
+  localStorage.setItem(CHAVE_SESSOES, JSON.stringify(sessoes));
+  localStorage.setItem(CHAVE_ULTIMO_PAPEL, sessao.papel);
+  sessionStorage.setItem(CHAVE_PAPEL_ABA, sessao.papel);
+}
+function sessaoDoPapel(papel) {
+  const sessao = lerSessoes()[papel];
+  return vigente(sessao) ? sessao : null;
+}
+function esquecerLogin(papel) {
+  const sessoes = lerSessoes();
+  delete sessoes[papel];
+  localStorage.setItem(CHAVE_SESSOES, JSON.stringify(sessoes));
+  if (localStorage.getItem(CHAVE_ULTIMO_PAPEL) === papel) localStorage.removeItem(CHAVE_ULTIMO_PAPEL);
+  sessionStorage.removeItem(CHAVE_PAPEL_ABA);
+}
+/** Sessão desta aba: o papel escolhido nela ou, numa aba nova, o último papel usado. */
 function lerLogin() {
-  try { return JSON.parse(sessionStorage.getItem(CHAVE_LOGIN) || 'null'); }
-  catch { sessionStorage.removeItem(CHAVE_LOGIN); return null; }
+  const papel = sessionStorage.getItem(CHAVE_PAPEL_ABA) || localStorage.getItem(CHAVE_ULTIMO_PAPEL);
+  return papel ? sessaoDoPapel(papel) : null;
 }
 async function requisicaoLogin(caminho, corpo, token) {
   const resposta = await fetch(caminho, { method: corpo === undefined ? 'GET' : 'POST',
@@ -48,27 +77,41 @@ if (formularioLogin) {
     finally { botao.disabled = false; }
   });
 } else {
-  // Intercepta os botões antes dos listeners da demo da #16.
-  document.addEventListener('click', (evento) => {
+  const pagina = document.querySelector('.sessao');
+  async function entrarComSessao(sessao) {
+    const atual = await requisicaoLogin('/api/sessao', undefined, sessao.token);
+    guardarLogin({ ...atual, token: sessao.token });
+    Object.assign(estado, { token: sessao.token, papel: atual.papel });
+    document.querySelector('#quem').textContent = `Sessão: ${atual.papel}`;
+    document.querySelectorAll('[data-papel]').forEach((b) => b.classList.toggle('ativo', b.dataset.papel === atual.papel));
+    await atualizar();
+  }
+  // Intercepta os botões antes dos listeners da demo da #16: reaproveita a sessão guardada do papel
+  // ou leva ao login.
+  document.addEventListener('click', async (evento) => {
     const botao = evento.target.closest('[data-papel]');
     if (!botao) return;
     evento.preventDefault(); evento.stopImmediatePropagation();
+    const guardada = sessaoDoPapel(botao.dataset.papel);
+    if (guardada) {
+      try { await entrarComSessao(guardada); return; }
+      catch { esquecerLogin(botao.dataset.papel); }
+    }
     location.assign(`/login.html?papel=${encodeURIComponent(botao.dataset.papel)}`);
   }, true);
   const contaLogin = lerLogin();
   if (contaLogin) {
-    requisicaoLogin('/api/sessao', undefined, contaLogin.token).then(async (sessao) => {
-      guardarLogin(sessao);
-      Object.assign(estado, { token: sessao.token, papel: sessao.papel });
-      document.querySelector('#quem').textContent = `Sessão: ${sessao.papel}`;
-      await atualizar();
-    }).catch(() => { sessionStorage.removeItem(CHAVE_LOGIN); avisar('Sessão expirada. Entre novamente.'); });
+    entrarComSessao(contaLogin).catch(() => { esquecerLogin(contaLogin.papel); avisar('Sessão expirada. Entre novamente.'); });
   }
   const confirmarLogin = document.createElement('a');
   confirmarLogin.href = '/login.html?acao=step-up'; confirmarLogin.textContent = 'Confirmar identidade';
-  document.querySelector('.sessao').append(confirmarLogin);
+  pagina.append(confirmarLogin);
   const sairLogin = document.createElement('button');
   sairLogin.textContent = 'Sair'; sairLogin.className = 'sec';
-  sairLogin.addEventListener('click', () => { sessionStorage.removeItem(CHAVE_LOGIN); location.reload(); });
-  document.querySelector('.sessao').append(sairLogin);
+  sairLogin.addEventListener('click', () => {
+    const atual = lerLogin();
+    if (atual) esquecerLogin(atual.papel);
+    location.reload();
+  });
+  pagina.append(sairLogin);
 }
